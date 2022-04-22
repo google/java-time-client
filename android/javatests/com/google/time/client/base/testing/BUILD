@@ -4,8 +4,8 @@ gen_android_local_tests(
     name = "tests",
     srcs = glob(["*.java"]),
     deps = [
-        "//android/java/com/google/time/client/base",
-        "//android/java/com/google/time/client/base/testing",
+        "//java/com/google/time/client/base",
+        "//java/com/google/time/client/base/testing",
         "@maven//:com_google_truth_truth",
         "@maven//:org_robolectric_robolectric",
         "@robolectric//bazel:android-all",

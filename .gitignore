@@ -20,6 +20,7 @@ build.log
 
 .idea
 *.iml
+.ijwb
 classes
 
 obj

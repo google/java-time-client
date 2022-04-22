@@ -4,6 +4,6 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//javase/java/com/google/time/client/base",
+        "//java/com/google/time/client/base",
     ],
 )

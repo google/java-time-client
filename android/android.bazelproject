@@ -1,0 +1,12 @@
+directories:
+  java
+  javatests
+targets:
+  //java/com/google/time/client/...
+  //javatests/com/google/time/client/...
+workspace_type: java
+additional_languages:
+  android
+java_language_level: 8
+test_sources:
+  javatests/*

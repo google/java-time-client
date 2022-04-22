@@ -6,6 +6,6 @@ android_library(
     ]),
     visibility = ["//visibility:public"],
     deps = [
-        "//android/java/com/google/time/client/base",
+        "//java/com/google/time/client/base",
     ],
 )

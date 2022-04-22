@@ -1,7 +1,6 @@
 # Use the Android SDK pointed to by ${ANDROID_HOME}
 android_sdk_repository(name = "androidsdk")
 
-# Required for http_archive
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 # BEGIN Required for android_local_test
@@ -33,9 +32,6 @@ maven_install(
         "com.google.truth:truth:1.1.3",
         # Android test suppport
         "junit:junit:4.13.2",
-        #"javax.inject:javax.inject:1",
-        #"org.hamcrest:java-hamcrest:2.0.0.0"
-        #"androidx.test.espresso:espresso-core:3.1.1",
         "androidx.test:core:aar:1.4.0",
         "androidx.test:rules:aar:1.4.0",
         "androidx.test:runner:aar:1.4.0",
