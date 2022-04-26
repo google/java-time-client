@@ -5,5 +5,6 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//java/com/google/time/client/base",
+        "@maven//:junit_junit",
     ],
 )

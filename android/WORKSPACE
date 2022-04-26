@@ -1,5 +1,8 @@
 # Use the Android SDK pointed to by ${ANDROID_HOME}
-android_sdk_repository(name = "androidsdk")
+android_sdk_repository(
+    name = "androidsdk",
+    api_level = 19,
+)
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 

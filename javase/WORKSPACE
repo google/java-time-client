@@ -30,4 +30,3 @@ http_archive(
     urls = ["https://github.com/google/bazel-common/archive/4a8d451e57fb7e1efecbf9495587a10684a19eb2.zip"],
 )
 # END bazel-common imports
-
