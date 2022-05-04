@@ -35,8 +35,8 @@ public final class Duration implements Comparable<Duration> {
     return new Duration(java.time.Duration.ofNanos(nanos));
   }
 
-  public static Duration ofSeconds(long seconds, long nanosOfSecond) {
-    return new Duration(java.time.Duration.ofSeconds(seconds, nanosOfSecond));
+  public static Duration ofSeconds(long seconds, long nanoAdjustment) {
+    return new Duration(java.time.Duration.ofSeconds(seconds, nanoAdjustment));
   }
 
   public static Duration between(Instant t1, Instant t2) {

@@ -17,6 +17,8 @@
 package com.google.time.client.base;
 
 import static com.google.time.client.base.AndroidDateTimeUtils.checkPositiveSubSecondNanos;
+import static com.google.time.client.base.impl.DateTimeConstants.MILLISECONDS_PER_SECOND;
+import static com.google.time.client.base.impl.DateTimeConstants.NANOS_PER_MILLISECOND;
 import static com.google.time.client.base.impl.DateTimeConstants.NANOS_PER_SECOND;
 
 import com.google.time.client.base.impl.ExactMath;
@@ -122,13 +124,15 @@ public final class Duration implements Comparable<Duration> {
   public long toMillis() {
     // This appears to match OpenJDK's Duration.toMillis() behavior before version 9. Also Android's
     // own version, and threetenbp at the time of writing.
-    return (this.seconds * 1000) + (this.nanosOfSecond / 1000000);
+    long secondsMillis = ExactMath.multiplyExact(seconds, MILLISECONDS_PER_SECOND);
+    return ExactMath.addExact(secondsMillis, this.nanosOfSecond / NANOS_PER_MILLISECOND);
   }
 
   public long toNanos() {
-    // TODO Checked arith
-    // TODO Negatives
-    return (this.seconds * NANOS_PER_SECOND) + this.nanosOfSecond;
+    // This appears to match OpenJDK's Duration.toNanos() behavior before version 9. Also Android's
+    // own version, and threetenbp at the time of writing.
+    long secondsNanos = ExactMath.multiplyExact(seconds, NANOS_PER_SECOND);
+    return ExactMath.addExact(secondsNanos, nanosOfSecond);
   }
 
   public long getSeconds() {

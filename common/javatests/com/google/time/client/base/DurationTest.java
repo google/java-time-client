@@ -17,6 +17,7 @@
 package com.google.time.client.base;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.time.client.base.impl.DateTimeConstants.MILLISECONDS_PER_SECOND;
 import static com.google.time.client.base.impl.DateTimeConstants.NANOS_PER_MILLISECOND;
 import static com.google.time.client.base.impl.DateTimeConstants.NANOS_PER_SECOND;
 import static com.google.time.client.base.testing.TestEnvironmentUtils.getJavaVersion;
@@ -40,20 +41,104 @@ public class DurationTest {
     assertEquals(constantZero, constantZero.plus(constantZero));
     assertEquals(constantZero, constantZero.minus(constantZero));
     assertEquals(0, constantZero.toMillis());
+    assertEquals(0, constantZero.toNanos());
     assertNotNull(constantZero.toString());
 
     Duration otherZero = Duration.ofNanos(0);
     assertEqualityMethods(constantZero, otherZero);
   }
 
+  // Covers ofSeconds(), toNanos(), getSeconds(), getNano()
   @Test
   public void allowedRange() {
     Duration maxDuration = Duration.ofSeconds(Long.MAX_VALUE, NANOS_PER_SECOND - 1);
+    assertThrows(ArithmeticException.class, () -> maxDuration.toMillis());
+    assertThrows(ArithmeticException.class, () -> maxDuration.toNanos());
+    assertEquals(Long.MAX_VALUE, maxDuration.getSeconds());
+    assertEquals(NANOS_PER_SECOND - 1, maxDuration.getNano());
+
     assertThrows(
         ArithmeticException.class, () -> Duration.ofSeconds(Long.MAX_VALUE, NANOS_PER_SECOND));
 
     Duration minDuration = Duration.ofSeconds(Long.MIN_VALUE, 0);
+    assertThrows(ArithmeticException.class, () -> minDuration.toMillis());
+    assertThrows(ArithmeticException.class, () -> minDuration.toNanos());
+    assertEquals(Long.MIN_VALUE, minDuration.getSeconds());
+    assertEquals(0, minDuration.getNano());
+
     assertThrows(ArithmeticException.class, () -> Duration.ofSeconds(Long.MIN_VALUE, -1));
+  }
+
+  @Test
+  public void toMillisOverflowCases() {
+    long maxMillis = Long.MAX_VALUE;
+    long maxMillisAsSeconds = maxMillis / 1000;
+    long maxNanoAdjustment = (maxMillis % MILLISECONDS_PER_SECOND) * NANOS_PER_MILLISECOND;
+    {
+      Duration duration = Duration.ofSeconds(maxMillisAsSeconds, 0);
+      assertThrows(ArithmeticException.class, () -> duration.toNanos());
+      assertEquals(maxMillisAsSeconds * MILLISECONDS_PER_SECOND, duration.toMillis());
+      assertEquals(maxMillisAsSeconds, duration.getSeconds());
+      assertEquals(0, duration.getNano());
+    }
+
+    {
+      Duration duration = Duration.ofSeconds(maxMillisAsSeconds, maxNanoAdjustment);
+      assertThrows(ArithmeticException.class, () -> duration.toNanos());
+      assertEquals(maxMillis, duration.toMillis());
+      assertEquals(maxMillisAsSeconds, duration.getSeconds());
+      assertEquals(maxNanoAdjustment, duration.getNano());
+    }
+
+    {
+      Duration duration =
+          Duration.ofSeconds(maxMillisAsSeconds, maxNanoAdjustment + NANOS_PER_MILLISECOND);
+      assertThrows(ArithmeticException.class, () -> duration.toNanos());
+      assertThrows(ArithmeticException.class, () -> duration.toMillis());
+      assertEquals(maxMillisAsSeconds, duration.getSeconds());
+      assertEquals(maxNanoAdjustment + NANOS_PER_MILLISECOND, duration.getNano());
+    }
+
+    {
+      Duration duration = Duration.ofSeconds(maxMillisAsSeconds + 1, 0);
+      assertThrows(ArithmeticException.class, () -> duration.toNanos());
+      assertThrows(ArithmeticException.class, () -> duration.toMillis());
+      assertEquals(maxMillisAsSeconds + 1, duration.getSeconds());
+      assertEquals(0, duration.getNano());
+    }
+
+    long minMillis = Long.MIN_VALUE;
+    long minMillisAsSeconds = minMillis / 1000;
+    long minNanoAdjustment = (minMillis % MILLISECONDS_PER_SECOND) * NANOS_PER_MILLISECOND;
+    {
+      Duration duration = Duration.ofSeconds(minMillisAsSeconds, 0);
+      assertThrows(ArithmeticException.class, () -> duration.toNanos());
+      assertEquals(minMillisAsSeconds * MILLISECONDS_PER_SECOND, duration.toMillis());
+      assertEquals(minMillisAsSeconds, duration.getSeconds());
+      assertEquals(0, duration.getNano());
+    }
+
+    {
+      Duration duration = Duration.ofSeconds(minMillisAsSeconds, minNanoAdjustment);
+      assertThrows(ArithmeticException.class, () -> duration.toNanos());
+      if (isThisAndroid() || (isThisJavaSe() && getJavaVersion() < 9)) {
+        assertThrows(ArithmeticException.class, () -> duration.toNanos());
+      } else {
+        assertEquals(minMillis, duration.toMillis());
+      }
+      assertEquals(minMillisAsSeconds - 1, duration.getSeconds());
+      assertEquals(NANOS_PER_SECOND + minNanoAdjustment, duration.getNano());
+    }
+
+    {
+      Duration duration =
+          Duration.ofSeconds(minMillisAsSeconds, minNanoAdjustment - NANOS_PER_MILLISECOND);
+      assertThrows(ArithmeticException.class, () -> duration.toNanos());
+      assertThrows(ArithmeticException.class, () -> duration.toMillis());
+      assertEquals(minMillisAsSeconds - 1, duration.getSeconds());
+      assertEquals(
+          NANOS_PER_SECOND + minNanoAdjustment - NANOS_PER_MILLISECOND, duration.getNano());
+    }
   }
 
   @Test
@@ -66,7 +151,8 @@ public class DurationTest {
     assertEquals(Duration.ofSeconds(2, 0), posOneSecond.plus(posOneSecond));
     assertEquals(posOneSecond, posOneSecond.minus(Duration.ZERO));
     assertEquals(Duration.ZERO, posOneSecond.minus(posOneSecond));
-    assertEquals(1000, posOneSecond.toMillis());
+    assertEquals(MILLISECONDS_PER_SECOND, posOneSecond.toMillis());
+    assertEquals(NANOS_PER_SECOND, posOneSecond.toNanos());
     assertNotNull(posOneSecond.toString());
 
     Duration otherPosOneSecond = Duration.ofNanos(1000000000);
@@ -83,7 +169,8 @@ public class DurationTest {
     assertEquals(Duration.ofSeconds(-2, 0), negOneSecond.plus(negOneSecond));
     assertEquals(negOneSecond, negOneSecond.minus(Duration.ZERO));
     assertEquals(Duration.ZERO, negOneSecond.minus(negOneSecond));
-    assertEquals(-1000, negOneSecond.toMillis());
+    assertEquals(-MILLISECONDS_PER_SECOND, negOneSecond.toMillis());
+    assertEquals(-NANOS_PER_SECOND, negOneSecond.toNanos());
     assertNotNull(negOneSecond.toString());
 
     Duration otherNegOneSecond = Duration.ofNanos(-1000000000);
@@ -101,6 +188,7 @@ public class DurationTest {
     assertEquals(posOneNano, posOneNano.minus(Duration.ZERO));
     assertEquals(Duration.ZERO, posOneNano.minus(posOneNano));
     assertEquals(0, posOneNano.toMillis());
+    assertEquals(1, posOneNano.toNanos());
     assertNotNull(posOneNano.toString());
 
     Duration otherPosOneNano = Duration.ofNanos(1);
@@ -123,6 +211,7 @@ public class DurationTest {
     } else {
       assertEquals(0, negOneNano.toMillis());
     }
+    assertEquals(-1, negOneNano.toNanos());
     assertNotNull(negOneNano.toString());
 
     Duration otherNegOneNano = Duration.ofNanos(-1);
@@ -140,6 +229,7 @@ public class DurationTest {
     assertEquals(pos999999999Nano, pos999999999Nano.minus(Duration.ZERO));
     assertEquals(Duration.ZERO, pos999999999Nano.minus(pos999999999Nano));
     assertEquals(999, pos999999999Nano.toMillis());
+    assertEquals(999999999, pos999999999Nano.toNanos());
     assertNotNull(pos999999999Nano.toString());
 
     Duration otherPos999999999Nano = Duration.ofNanos(999999999);
@@ -162,6 +252,7 @@ public class DurationTest {
     } else {
       assertEquals(-999L, neg999999999Nano.toMillis());
     }
+    assertEquals(-999999999, neg999999999Nano.toNanos());
     assertNotNull(neg999999999Nano.toString());
 
     Duration otherNeg999999999Nano = Duration.ofNanos(-999999999);
@@ -231,12 +322,9 @@ public class DurationTest {
       assertEquals(NANOS_PER_SECOND + (nanos % NANOS_PER_SECOND), duration.getNano());
       if (isThisAndroid() || (isThisJavaSe() && getJavaVersion() < 9)) {
         assertEquals(nanos / NANOS_PER_MILLISECOND - 1, duration.toMillis());
-      } else {
-        assertEquals(nanos / NANOS_PER_MILLISECOND, duration.toMillis());
-      }
-      if (isThisJavaSe() && getJavaVersion() < 9) {
         assertThrows(ArithmeticException.class, duration::toNanos);
       } else {
+        assertEquals(nanos / NANOS_PER_MILLISECOND, duration.toMillis());
         assertEquals(nanos, duration.toNanos());
       }
     }
