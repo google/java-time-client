@@ -38,6 +38,15 @@ project artifacts.
 Execute automated tests using `blaze` commands like:
 `bazel test //javatests/com/google/time/client/base:tests`
 
+Running Android tests:
+
+bazel's android_instrumentation_test rule is not working at the time of writing,
+so testing requires that you set up / make available an Android device or
+emulator and make it available over adb.
+
+To run the tests com.google.time.client.base tests on a real device use
+`android/run_device_tests.sh`.
+
 ## Developing the project
 
 ### The directory structure
