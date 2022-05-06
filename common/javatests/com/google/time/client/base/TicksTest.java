@@ -25,11 +25,11 @@ import org.junit.Test;
 
 public class TicksTest {
 
-  private static final Ticker TICKER_1 = new FakeClocks().getTicker();
-  private static final Ticker TICKER_2 = new FakeClocks().getTicker();
+  private static final Ticker TICKER_1 = new FakeClocks().getFakeTicker();
+  private static final Ticker TICKER_2 = new FakeClocks().getFakeTicker();
 
   @Test
-  public void testEqualsAndHashcode() {
+  public void equalsAndHashcode() {
     Ticks ticks1_1 = Ticks.fromTickerValue(TICKER_1, 1234L);
     assertEqualsAndHashcodeMatch(ticks1_1, ticks1_1);
 
@@ -50,7 +50,7 @@ public class TicksTest {
   }
 
   @Test
-  public void testElapsed() {
+  public void durationUntil() {
     Ticks floor = Ticks.fromTickerValue(TICKER_1, Long.MIN_VALUE);
     Ticks zero = Ticks.fromTickerValue(TICKER_1, 0);
     Ticks ceil = Ticks.fromTickerValue(TICKER_1, Long.MAX_VALUE);

@@ -33,24 +33,24 @@ public class FakeClocksTest {
   public void initialValues() {
     FakeClocks fakeClocks = new FakeClocks();
 
-    FakeInstantSource instantSource = fakeClocks.getInstantSource();
+    FakeInstantSource instantSource = fakeClocks.getFakeInstantSource();
     assertEquals(InstantSource.PRECISION_MILLIS, instantSource.getPrecision());
     assertEquals(Instant.ofEpochMilli(0), instantSource.instant());
 
-    FakeTicker ticker = fakeClocks.getTicker();
+    FakeTicker ticker = fakeClocks.getFakeTicker();
     assertEquals(Ticks.fromTickerValue(ticker, 0), ticker.ticks());
-    assertEquals(0, ticker.getTicksValue());
+    assertEquals(Ticks.fromTickerValue(ticker, 0), ticker.getCurrentTicks());
   }
 
   @Test
   public void autoAdvance_defaultDisabled() {
     FakeClocks fakeClocks = new FakeClocks();
-    FakeInstantSource fakeInstantSource = fakeClocks.getInstantSource();
+    FakeInstantSource fakeInstantSource = fakeClocks.getFakeInstantSource();
     // By default, FakeInstantSource has millis resolution, so switch to nano so we can test that it
     // increments.
     fakeInstantSource.setPrecision(InstantSource.PRECISION_NANOS);
 
-    FakeTicker fakeTicker = fakeClocks.getTicker();
+    FakeTicker fakeTicker = fakeClocks.getFakeTicker();
     Instant instant1 = fakeInstantSource.instant();
     Ticks ticks1 = fakeTicker.ticks();
     Instant instant2 = fakeInstantSource.instant();
@@ -63,12 +63,12 @@ public class FakeClocksTest {
   public void autoAdvance_enabled() {
     FakeClocks fakeClocks = new FakeClocks();
     fakeClocks.setAutoAdvanceNanos(1);
-    FakeInstantSource fakeInstantSource = fakeClocks.getInstantSource();
+    FakeInstantSource fakeInstantSource = fakeClocks.getFakeInstantSource();
     // By default, FakeInstantSource has millis resolution, so switch to nano so we can test that it
     // increments.
     fakeInstantSource.setPrecision(InstantSource.PRECISION_NANOS);
 
-    FakeTicker fakeTicker = fakeClocks.getTicker();
+    FakeTicker fakeTicker = fakeClocks.getFakeTicker();
     Instant instant1 = fakeInstantSource.instant();
     Ticks ticks1 = fakeTicker.ticks();
     Instant instant2 = fakeInstantSource.instant();
@@ -81,9 +81,9 @@ public class FakeClocksTest {
   public void manualAdvance() {
     FakeClocks fakeClocks = new FakeClocks();
 
-    FakeInstantSource fakeInstantSource = fakeClocks.getInstantSource();
+    FakeInstantSource fakeInstantSource = fakeClocks.getFakeInstantSource();
 
-    FakeTicker fakeTicker = fakeClocks.getTicker();
+    FakeTicker fakeTicker = fakeClocks.getFakeTicker();
     Instant instant1 = fakeInstantSource.instant();
     Ticks ticks1 = fakeTicker.ticks();
     Instant instant2 = fakeInstantSource.instant();
@@ -108,7 +108,7 @@ public class FakeClocksTest {
   @Test
   public void instanceSourcePrecision() {
     FakeClocks fakeClocks = new FakeClocks();
-    FakeInstantSource instantSource = fakeClocks.getInstantSource();
+    FakeInstantSource instantSource = fakeClocks.getFakeInstantSource();
     instantSource.setEpochNanos(1_234_567_890_123L);
 
     assertEquals(Instant.ofEpochMilli(1_234_567), instantSource.instant());

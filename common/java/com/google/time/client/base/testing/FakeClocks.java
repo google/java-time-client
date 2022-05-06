@@ -30,7 +30,7 @@ import com.google.time.client.base.Ticks;
  * with each other automatically each time they are accessed via methods on this class. The
  * individual clocks can be advanced independently via methods on each.
  */
-public class FakeClocks {
+public class FakeClocks implements Advanceable {
 
   private final FakeInstantSource fakeInstantSource = new FakeInstantSource();
   private final FakeTicker fakeTicker = new FakeTicker();
@@ -47,21 +47,27 @@ public class FakeClocks {
     this.autoAdvanceDuration = autoAdvanceDuration;
   }
 
-  /** Returns the fake {@link FakeInstantSource}. */
-  public FakeInstantSource getInstantSource() {
+  /** Returns the {@link FakeInstantSource}. */
+  public FakeInstantSource getFakeInstantSource() {
     return fakeInstantSource;
   }
 
-  /** Returns the fake {@link Ticker}. */
-  public FakeTicker getTicker() {
+  /** Returns the {@link FakeTicker}. */
+  public FakeTicker getFakeTicker() {
     return fakeTicker;
+  }
+
+  @Override
+  public void advance(Duration duration) {
+    fakeInstantSource.advance(duration);
+    fakeTicker.advance(duration);
   }
 
   /**
    * A fake {@link Ticker} that can be used for tests. This ticker simulates one that increments the
    * tick value every nanosecond.
    */
-  public class FakeTicker extends Ticker {
+  public class FakeTicker extends Ticker implements Advanceable {
 
     private long ticksValue;
 
@@ -75,7 +81,7 @@ public class FakeClocks {
     @Override
     public Ticks ticks() {
       ticksValue += autoAdvanceDuration.toNanos();
-      return Ticks.fromTickerValue(this, ticksValue);
+      return getCurrentTicks();
     }
 
     /** Asserts the current ticks value matches the one supplied. Does not auto advance. */
@@ -84,8 +90,8 @@ public class FakeClocks {
     }
 
     /** Returns the current ticks value. Does not auto advance. */
-    public long getTicksValue() {
-      return ticksValue;
+    public Ticks getCurrentTicks() {
+      return Ticks.fromTickerValue(this, ticksValue);
     }
 
     /** Sets the current ticks value. Does not auto advance. */
@@ -93,9 +99,14 @@ public class FakeClocks {
       this.ticksValue = ticksValue;
     }
 
-    public void advanceNanos(int nanos) {
+    public void advanceNanos(long nanos) {
       // FakeTicker.ticksValue is fixed to nanoseconds.
       ticksValue += nanos;
+    }
+
+    @Override
+    public void advance(Duration duration) {
+      advanceNanos(duration.toNanos());
     }
 
     @Override
@@ -115,7 +126,7 @@ public class FakeClocks {
    * <p>By default, this instant source simulates one that returns instants with millisecond
    * precision, but this can be changed.
    */
-  public class FakeInstantSource extends InstantSource {
+  public class FakeInstantSource extends InstantSource implements Advanceable {
 
     private Instant instantSourceNow = Instant.ofEpochMilli(0);
     private int precision = InstantSource.PRECISION_MILLIS;
@@ -140,7 +151,13 @@ public class FakeClocks {
 
     /** Advance this instant source by the specified number of milliseconds. */
     public void advanceMillis(long millis) {
-      instantSourceNow = instantSourceNow.plus(Duration.ofNanos(millis * NANOS_PER_MILLISECOND));
+      advance(Duration.ofNanos(millis * NANOS_PER_MILLISECOND));
+    }
+
+    /** Advance this instant source by the specified duration. */
+    @Override
+    public void advance(Duration duration) {
+      instantSourceNow = instantSourceNow.plus(duration);
     }
 
     public void setEpochMillis(long epochMillis) {
@@ -151,7 +168,8 @@ public class FakeClocks {
       instantSourceNow = instant;
     }
 
-    public Instant getFakeClockInstant() {
+    /** Returns the current instant. Does not auto advance. */
+    public Instant getCurrentInstant() {
       return instantSourceNow;
     }
 

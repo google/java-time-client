@@ -92,5 +92,10 @@ public final class PlatformNetwork {
     public void close() {
       delegate.close();
     }
+
+    @Override
+    public boolean isClosed() {
+      return delegate.isClosed();
+    }
   }
 }

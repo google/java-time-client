@@ -25,6 +25,12 @@ public class PredictableRandom extends Random {
 
   private int intPos = 0;
 
+  public PredictableRandom() {}
+
+  public PredictableRandom(int... intSequence) {
+    setIntSequence(intSequence);
+  }
+
   public void setIntSequence(int... intSequence) {
     this.intSequence = intSequence;
   }

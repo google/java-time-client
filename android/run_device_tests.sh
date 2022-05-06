@@ -23,22 +23,29 @@ RULES=(
   "//javatests/com/google/time/client/base:tests.test_app.apk"
   "//javatests/com/google/time/client/base/testing:tests.app.apk"
   "//javatests/com/google/time/client/base/testing:tests.test_app.apk"
+  "//javatests/com/google/time/client/sntp:tests.app.apk"
+  "//javatests/com/google/time/client/sntp:tests.test_app.apk"
 )
 APKS=(
   "javatests/com/google/time/client/base/tests.app.apk"
   "javatests/com/google/time/client/base/tests.test_app.apk"
   "javatests/com/google/time/client/base/testing/tests.app.apk"
   "javatests/com/google/time/client/base/testing/tests.test_app.apk"
+  "javatests/com/google/time/client/sntp/tests.app.apk"
+  "javatests/com/google/time/client/sntp/tests.test_app.apk"
 )
 PACKAGES=(
   "com.google.time.client.base"
   "com.google.time.client.base.test"
   "com.google.time.client.base.testing"
   "com.google.time.client.base.testing.test"
+  "com.google.time.client.sntp"
+  "com.google.time.client.sntp.test"
 )
 TEST_PACKAGES=(
   "com.google.time.client.base.test"
   "com.google.time.client.base.testing.test"
+  "com.google.time.client.sntp.test"
 )
 
 # TODO There is a lot of scope to remove duplication above and below.
