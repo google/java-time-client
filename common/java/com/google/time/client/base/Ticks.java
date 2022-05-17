@@ -38,7 +38,7 @@ public final class Ticks {
   private final long value;
 
   private Ticks(/*@NonNull*/ Ticker originTicker, long value) {
-    this.originTicker = Objects.requireNonNull(originTicker);
+    this.originTicker = Objects.requireNonNull(originTicker, "originTicker");
     this.value = value;
   }
 

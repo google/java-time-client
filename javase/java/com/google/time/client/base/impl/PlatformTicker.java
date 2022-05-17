@@ -39,6 +39,11 @@ public final class PlatformTicker extends Ticker {
     return Ticks.fromTickerValue(this, System.nanoTime());
   }
 
+  @Override
+  public String toString() {
+    return "PlatformTicker";
+  }
+
   /**
    * Calculates the duration between two Ticks.
    *

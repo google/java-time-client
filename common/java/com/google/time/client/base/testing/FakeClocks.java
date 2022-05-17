@@ -35,11 +35,16 @@ public class FakeClocks {
   private final FakeInstantSource fakeInstantSource = new FakeInstantSource();
   private final FakeTicker fakeTicker = new FakeTicker();
 
-  private long autoAdvanceNanos;
+  private Duration autoAdvanceDuration = Duration.ZERO;
 
   /** Clock is automatically advanced <em>before</em> the time is read. */
   public void setAutoAdvanceNanos(long autoAdvanceNanos) {
-    this.autoAdvanceNanos = autoAdvanceNanos;
+    this.autoAdvanceDuration = Duration.ofNanos(autoAdvanceNanos);
+  }
+
+  /** Clock is automatically advanced <em>before</em> the time is read. */
+  public void setAutoAdvanceDuration(Duration autoAdvanceDuration) {
+    this.autoAdvanceDuration = autoAdvanceDuration;
   }
 
   /** Returns the fake {@link FakeInstantSource}. */
@@ -69,7 +74,7 @@ public class FakeClocks {
 
     @Override
     public Ticks ticks() {
-      ticksValue += autoAdvanceNanos;
+      ticksValue += autoAdvanceDuration.toNanos();
       return Ticks.fromTickerValue(this, ticksValue);
     }
 
@@ -98,8 +103,8 @@ public class FakeClocks {
       return "FakeTicker{"
           + "ticksValue="
           + ticksValue
-          + ", FakeClocks.this.autoAdvanceNanos="
-          + FakeClocks.this.autoAdvanceNanos
+          + ", FakeClocks.this.autoAdvanceDuration="
+          + FakeClocks.this.autoAdvanceDuration
           + '}';
     }
   }
@@ -124,7 +129,7 @@ public class FakeClocks {
 
     @Override
     public Instant instant() {
-      instantSourceNow = instantSourceNow.plus(Duration.ofNanos(autoAdvanceNanos));
+      instantSourceNow = instantSourceNow.plus(autoAdvanceDuration);
       if (precision == PRECISION_MILLIS) {
         return Instant.ofEpochMilli(instantSourceNow.toEpochMilli());
       } else if (precision == PRECISION_NANOS) {
@@ -140,6 +145,14 @@ public class FakeClocks {
 
     public void setEpochMillis(long epochMillis) {
       instantSourceNow = Instant.ofEpochMilli(epochMillis);
+    }
+
+    public void setInstant(Instant instant) {
+      instantSourceNow = instant;
+    }
+
+    public Instant getFakeClockInstant() {
+      return instantSourceNow;
     }
 
     public void setPrecision(int precision) {
@@ -163,8 +176,8 @@ public class FakeClocks {
           + instantSourceNow
           + ", resolution="
           + precision
-          + ", FakeClocks.this.autoAdvanceNanos="
-          + FakeClocks.this.autoAdvanceNanos
+          + ", FakeClocks.this.autoAdvanceDuration="
+          + FakeClocks.this.autoAdvanceDuration
           + '}';
     }
   }

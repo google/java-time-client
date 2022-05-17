@@ -30,8 +30,16 @@ public final class Objects {
    * argument is {@code null}.
    */
   public static <T> T requireNonNull(T object) {
+    return requireNonNull(object, null);
+  }
+
+  /**
+   * Returns the argument if it is non-null. Throws {@link java.lang.NullPointerException} if the
+   * argument is {@code null}.
+   */
+  public static <T> T requireNonNull(T object, String message) {
     if (object == null) {
-      throw new NullPointerException();
+      throw new NullPointerException(message);
     }
     return object;
   }
