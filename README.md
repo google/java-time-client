@@ -36,7 +36,16 @@ project artifacts.
 ### Testing
 
 Execute automated tests using `blaze` commands like:
-`bazel test android/javatests/com/google/time/client/base:tests`
+`bazel test //javatests/com/google/time/client/base:tests`
+
+Running Android tests:
+
+bazel's android_instrumentation_test rule is not working at the time of writing,
+so testing requires that you set up / make available an Android device or
+emulator and make it available over adb.
+
+To run the tests com.google.time.client.base tests on a real device use
+`android/run_device_tests.sh`.
 
 ## Developing the project
 
@@ -80,14 +89,28 @@ To create the Java SE project:
 + Repeat the steps used for the Android project but for
   `java-time-client/javase` / `javase`.
 
+### Java versions
+
+By default, bazel will use its own java tooling and it doesn't naturally support
+Java versions < 11. To build / run with Java 8, set your JAVA_HOME to your local
+install of JDK 8 and use flags to specify the JDK:
+
+`bazel --java_runtime_version=local_jdk`
 
 ## Navigating the project
 
 ### Packages / Artifacts
 
-+ "base" / `com.google.time.client.base`: Base classes to support higher-level
-  code.  These include stand-ins for various classes that are not supported on
-  earlier versions of Android.
++ "base" / `com.google.time.client.base` / `com.google.time.client.base.impl`
+  Base classes to support higher-level code.  These include stand-ins for
+  various classes that are not supported on earlier versions of Android.
+  `com.google.time.client.base` contains classes that are intended to be
+  considered API classes.
+  `com.google.time.client.base.impl` contains code that isn't intended to be
+  considered stable but can be used by other parts of java-time-client.
++ "base/testing" / `com.google.time.client.base.testing`: Base testing classes
+  to support higher-level code.  This includes code that is only used for
+  testing, and test versions of code in "base".
 
 ## License
 

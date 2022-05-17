@@ -1,5 +1,8 @@
 android_library(
     name = "base",
-    srcs = glob(["*.java"]),
+    srcs = glob([
+        "*.java",
+        "impl/*.java",
+    ]),
     visibility = ["//visibility:public"],
 )

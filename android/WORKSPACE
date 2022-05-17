@@ -1,5 +1,10 @@
 # Use the Android SDK pointed to by ${ANDROID_HOME}
-android_sdk_repository(name = "androidsdk")
+android_sdk_repository(
+    name = "androidsdk",
+    api_level = 19,
+    # This version is needed for dx, which is used by bazel android_ rules.
+    build_tools_version = "30.0.3",
+)
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
@@ -53,11 +58,11 @@ http_archive(
 # END bazel-common imports
 
 # BEGIN Android Test Support
-ATS_COMMIT = "93d9e7a84dba5a5cf3f614495e8d94525c561f60"
+ATS_COMMIT = "d3903f728108c878308a416daa8b993c7e4c3c8e"
 
 http_archive(
     name = "android_test_support",
-    sha256 = "647038955059a6ac9484f621296dab69d008b27a99cf8b96ea3779a8b5d47be9",
+    sha256 = "ee3a02f269aceded11eca7055b607d35c861d87a7ea69b8d4326e34be1448a4f",
     strip_prefix = "android-test-%s" % ATS_COMMIT,
     urls = ["https://github.com/android/android-test/archive/%s.tar.gz" % ATS_COMMIT],
 )
