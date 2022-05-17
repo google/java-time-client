@@ -42,4 +42,9 @@ public final class PlatformInstantSource extends InstantSource {
   public int getPrecision() {
     return PRECISION_MILLIS;
   }
+
+  @Override
+  public String toString() {
+    return "PlatformInstantSource";
+  }
 }

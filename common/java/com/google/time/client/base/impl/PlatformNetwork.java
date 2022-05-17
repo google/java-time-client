@@ -79,13 +79,13 @@ public final class PlatformNetwork {
     }
 
     @Override
-    public void send(DatagramPacket requestPacket) throws IOException {
-      delegate.send(requestPacket);
+    public void send(DatagramPacket packet) throws IOException {
+      delegate.send(packet);
     }
 
     @Override
-    public void receive(DatagramPacket responsePacket) throws IOException {
-      delegate.receive(responsePacket);
+    public void receive(DatagramPacket packet) throws IOException {
+      delegate.receive(packet);
     }
 
     @Override

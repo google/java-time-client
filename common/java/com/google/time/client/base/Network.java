@@ -39,9 +39,9 @@ public interface Network {
 
     void setSoTimeout(Duration timeout) throws SocketException;
 
-    void send(DatagramPacket requestPacket) throws IOException;
+    void send(DatagramPacket packet) throws IOException;
 
-    void receive(DatagramPacket responsePacket) throws IOException;
+    void receive(DatagramPacket packet) throws IOException;
 
     void close();
   }

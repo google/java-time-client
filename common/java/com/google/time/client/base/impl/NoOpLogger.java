@@ -21,9 +21,28 @@ import com.google.time.client.base.Logger;
 /** A Logger implementation that does nothing. */
 public class NoOpLogger implements Logger {
 
+  private static final NoOpLogger INSTANCE = new NoOpLogger();
+
+  public static NoOpLogger instance() {
+    return INSTANCE;
+  }
+
+  private NoOpLogger() {}
+
+  @Override
+  public boolean isLoggingFine() {
+    return false;
+  }
+
   @Override
   public void fine(String msg) {}
 
   @Override
+  public void fine(String msg, Throwable e) {}
+
+  @Override
   public void warning(String msg) {}
+
+  @Override
+  public void warning(String msg, Throwable e) {}
 }

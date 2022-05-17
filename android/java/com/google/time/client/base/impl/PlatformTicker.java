@@ -44,4 +44,9 @@ public final class PlatformTicker extends Ticker {
   public Ticks ticks() {
     return Ticks.fromTickerValue(this, SystemClock.elapsedRealtimeNanos());
   }
+
+  @Override
+  public String toString() {
+    return "PlatformTicker";
+  }
 }

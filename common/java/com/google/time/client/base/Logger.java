@@ -22,7 +22,13 @@ package com.google.time.client.base;
  */
 public interface Logger {
 
+  boolean isLoggingFine();
+
   void fine(String msg);
 
+  void fine(String msg, Throwable e);
+
   void warning(String msg);
+
+  void warning(String msg, Throwable e);
 }
