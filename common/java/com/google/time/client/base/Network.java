@@ -44,5 +44,7 @@ public interface Network {
     void receive(DatagramPacket packet) throws IOException;
 
     void close();
+
+    boolean isClosed();
   }
 }

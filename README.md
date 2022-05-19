@@ -73,6 +73,16 @@ For BUILD and related:
 + Use https://github.com/bazelbuild/buildtools
 + e.g. `buildifier -r --lint=warn .`
 
+### Terminology / naming
+
+Words like "clock" and "time" can only be used generally. If you can, be
+specific:
+
++ Time: It's all time! Use "ticks", "instant" and "duration" as appropriate.
+  For NTP "timestamp" is used to indicate an NTP timestamp.
++ Clock: We have two types of clock, so use "Ticker" or "Instant Source"
+  depending on whether you're talking about a source of Ticks or Instants.
+
 ### Developing with IntelliJ IDEA
 
 You don't have to use IntelliJ, but if you do...
@@ -111,6 +121,11 @@ install of JDK 8 and use flags to specify the JDK:
 + "base/testing" / `com.google.time.client.base.testing`: Base testing classes
   to support higher-level code.  This includes code that is only used for
   testing, and test versions of code in "base".
++ "sntp" / `com.google.time.client.sntp` / `com.google.time.client.sntp.impl`
+  An SNTP client implementation.
++ "sntp/testing" / `com.google.time.client.sntp.testing`: SNTP testing classes
+  to support higher-level code.  This includes code that is only used for
+  testing, and test versions of code in "sntp" and "base".
 
 ## License
 
