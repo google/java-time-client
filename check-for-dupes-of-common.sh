@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Checks for file names that exist in both common/ and either javase/ and
+# android/. The exit status code is 0 if no duplicate names exist.
+
 function report_if_exists() {
   F1=$1
 

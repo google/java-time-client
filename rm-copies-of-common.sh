@@ -13,6 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This script is used to remove copies of files from common/ that exist in in
+# android/ and javase/. This is typically used to undo copies created with
+# replace-symlinks-to-common-with-copies.sh. If files exist in a variant but
+# differ, this is reported and the variant copy is kept.
+
 function delete_if_same_as() {
   F1=$1
   F2=$2

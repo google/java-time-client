@@ -36,3 +36,5 @@ bazel-*
 *.pyc
 
 .gradle
+
+java-time-client.config

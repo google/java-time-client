@@ -1,0 +1,5 @@
+# A template for java-time-client.config
+# Copy this template, and modify to suit your environment.
+JAVA_FORMAT_JAR=${ROOT_DIR}/google-java-format-1.15.0-all-deps.jar
+ANDROID_SDK=~/Android/Sdk/
+JDK8=/pathto/jdk8
