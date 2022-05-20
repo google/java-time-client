@@ -27,7 +27,7 @@ import com.google.time.client.sntp.BasicSntpClient.ClientConfig;
 import com.google.time.client.sntp.SntpResult;
 
 /** A simple command / demo of the {@link BasicSntpClient}. */
-public class SntpTool {
+public final class SntpTool {
 
   private SntpTool() {}
 

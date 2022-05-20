@@ -19,6 +19,7 @@ package com.google.time.client.sntp.impl;
 import static com.google.time.client.base.impl.DateTimeConstants.NANOS_PER_SECOND;
 
 import com.google.time.client.base.Duration;
+import com.google.time.client.base.annotations.VisibleForTesting;
 import com.google.time.client.base.impl.Objects;
 import com.google.time.client.sntp.InvalidNtpValueException;
 import java.net.DatagramPacket;
@@ -31,36 +32,29 @@ import java.util.Arrays;
  * wrapper is created and individual accessor methods may throw exceptions if the content of the
  * {@code byte[]} content is found to be invalid at that point.
  *
- * <p>The convention used by this class is that invalid data when reading values (which may have
- * come from external sources) are treated as checked exceptions because they must be considered by
- * developers. When writing values, these are treated as runtime exceptions as they are most likely
- * caused by coding or config errors and should not be common.
+ * <p>The convention used by this class for invalid data:
+ *
+ * <ul>
+ *   <li>When reading invalid values (which may have come from external sources), these are treated
+ *       as checked exceptions because they must be considered by developers.
+ *   <li>When writing values, these are treated as runtime exceptions as they are most likely caused
+ *       by coding or config errors.
+ * </ul>
  */
 public final class NtpMessage {
 
-  // @VisibleForTesting
-  static final int LI_VN_MODE_OFFSET = 0;
-  // @VisibleForTesting
-  static final int STRATUM_OFFSET = 1;
-  // @VisibleForTesting
-  static final int POLL_OFFSET = 2;
-  // @VisibleForTesting
-  static final int PRECISION_OFFSET = 3;
+  @VisibleForTesting static final int LI_VN_MODE_OFFSET = 0;
+  @VisibleForTesting static final int STRATUM_OFFSET = 1;
+  @VisibleForTesting static final int POLL_OFFSET = 2;
+  @VisibleForTesting static final int PRECISION_OFFSET = 3;
 
-  // @VisibleForTesting
-  static final int ROOT_DELAY_OFFSET = 4;
-  // @VisibleForTesting
-  static final int ROOT_DISPERSION_OFFSET = 8;
-  // @VisibleForTesting
-  static final int REFERENCE_IDENTIFIER_OFFSET = 12;
-  // @VisibleForTesting
-  static final int REFERENCE_TIME_OFFSET = 16;
-  // @VisibleForTesting
-  static final int ORIGINATE_TIME_OFFSET = 24;
-  // @VisibleForTesting
-  static final int RECEIVE_TIME_OFFSET = 32;
-  // @VisibleForTesting
-  static final int TRANSMIT_TIME_OFFSET = 40;
+  @VisibleForTesting static final int ROOT_DELAY_OFFSET = 4;
+  @VisibleForTesting static final int ROOT_DISPERSION_OFFSET = 8;
+  @VisibleForTesting static final int REFERENCE_IDENTIFIER_OFFSET = 12;
+  @VisibleForTesting static final int REFERENCE_TIME_OFFSET = 16;
+  @VisibleForTesting static final int ORIGINATE_TIME_OFFSET = 24;
+  @VisibleForTesting static final int RECEIVE_TIME_OFFSET = 32;
+  @VisibleForTesting static final int TRANSMIT_TIME_OFFSET = 40;
 
   private static final int MINIMUM_NTP_PACKET_SIZE = 48;
   public static final int NTPV3_PACKET_SIZE = MINIMUM_NTP_PACKET_SIZE;
@@ -128,7 +122,7 @@ public final class NtpMessage {
    *
    * @throws IllegalArgumentException if bytes is too small
    */
-  // @VisibleForTesting
+  @VisibleForTesting
   public static NtpMessage fromBytesForTests(
       byte[] bytes, InetAddress originAddress, Integer originPort) {
     return new NtpMessage(bytes, originAddress, originPort);
@@ -428,7 +422,7 @@ public final class NtpMessage {
   }
 
   /** Returns a copy of the packet data. */
-  // @VisibleForTesting
+  @VisibleForTesting
   public byte[] toByteArray() {
     return readBytes(buffer.length, 0);
   }
@@ -497,22 +491,22 @@ public final class NtpMessage {
     if (!condition) throw new IllegalArgumentException();
   }
 
-  // @VisibleForTesting
+  @VisibleForTesting
   static byte read8Signed(byte[] buffer, int offset) {
     return buffer[offset];
   }
 
-  // @VisibleForTesting
+  @VisibleForTesting
   static void write8Signed(byte[] buffer, int offset, byte value) {
     buffer[offset] = value;
   }
 
-  // @VisibleForTesting
+  @VisibleForTesting
   static int read8Unsigned(byte[] buffer, int offset) {
     return buffer[offset] & 0xFF;
   }
 
-  // @VisibleForTesting
+  @VisibleForTesting
   static void write8Unsigned(byte[] buffer, int offset, int value) {
     if (value < 0 || value > 255) {
       throw new IllegalArgumentException("value=" + value);
@@ -528,7 +522,7 @@ public final class NtpMessage {
     return value;
   }
 
-  // @VisibleForTesting
+  @VisibleForTesting
   static Duration pow2ToDuration(int exponent) throws InvalidNtpValueException {
     checkReadValueInRange(0, 62, exponent);
     long seconds = 1L << exponent;
@@ -545,7 +539,7 @@ public final class NtpMessage {
    * @param maxLength the maximum characters to read
    * @return the String value read
    */
-  // @VisibleForTesting
+  @VisibleForTesting
   static String readAscii(byte[] buffer, int offset, int maxLength) {
     StringBuilder sb = new StringBuilder(maxLength);
     for (int i = offset; i < offset + maxLength; i++) {
@@ -573,7 +567,7 @@ public final class NtpMessage {
    * @param length the number of bytes to write
    * @param value the source of characters
    */
-  // @VisibleForTesting
+  @VisibleForTesting
   static void writeAscii(byte[] buffer, int offset, int length, String value) {
     if (value.length() > length) {
       throw new IllegalArgumentException("String too long:" + Integer.toString(length));
@@ -594,14 +588,14 @@ public final class NtpMessage {
   }
 
   /** Reads an unsigned 32-bit big endian number from the specified offset in the buffer. */
-  // @VisibleForTesting
+  @VisibleForTesting
   static long read32Unsigned(byte[] buffer, int offset) {
     // Widen the int to a long, keep only the bottom 32 bits.
     return read32Signed(buffer, offset) & 0xFFFF_FFFFL;
   }
 
   /** Writes an unsigned 32-bit big endian number to the specified offset in the buffer. */
-  // @VisibleForTesting
+  @VisibleForTesting
   static void write32Unsigned(byte[] buffer, int offset, long value) {
     if (value < 0 || value > 0xFFFF_FFFFL) {
       throw new IllegalArgumentException(Long.toString(value));
@@ -614,7 +608,7 @@ public final class NtpMessage {
   }
 
   /** Reads a signed 32-bit big endian number from the specified offset in the buffer. */
-  // @VisibleForTesting
+  @VisibleForTesting
   static int read32Signed(byte[] buffer, int offset) {
     int i0 = buffer[offset] & 0xFF;
     int i1 = buffer[offset + 1] & 0xFF;
@@ -625,7 +619,7 @@ public final class NtpMessage {
   }
 
   /** Writes a signed 32-bit big endian number to the specified offset in the buffer. */
-  // @VisibleForTesting
+  @VisibleForTesting
   static void write32Signed(byte[] buffer, int offset, int value) {
     buffer[offset++] = (byte) (value >>> 24);
     buffer[offset++] = (byte) (value >>> 16);
@@ -637,7 +631,7 @@ public final class NtpMessage {
    * Reads a duration that has been encoded as an unsigned 32-bit NTP duration value. The conversion
    * to {@link Duration} is lossy.
    */
-  // @VisibleForTesting
+  @VisibleForTesting
   static Duration read32UnsignedFixedPointDuration(byte[] buffer, int offset) {
     long value = read32Unsigned(buffer, offset);
 
@@ -657,7 +651,7 @@ public final class NtpMessage {
    * Duration} is lossy. If the duration is outside the range representable as an unsigned 16-bit
    * number of seconds then {@link IllegalArgumentException} will be thrown.
    */
-  // @VisibleForTesting
+  @VisibleForTesting
   static void write32UnsignedFixedPointDuration(byte[] buffer, int offset, Duration duration) {
     long seconds = duration.getSeconds();
     if (seconds < 0 || seconds > Character.MAX_VALUE) {
@@ -674,7 +668,7 @@ public final class NtpMessage {
    * Reads a duration that has been encoded as a signed 32-bit NTP duration value. The conversion to
    * {@link Duration} is lossy.
    */
-  // @VisibleForTesting
+  @VisibleForTesting
   static Duration read32SignedFixedPointDuration(byte[] buffer, int offset) {
     int value = read32Signed(buffer, offset);
 
@@ -701,7 +695,7 @@ public final class NtpMessage {
    * Duration} is lossy. If the duration is outside the range representable as an signed 16-bit
    * number of seconds then {@link IllegalArgumentException} will be thrown.
    */
-  // @VisibleForTesting
+  @VisibleForTesting
   static void write32SignedFixedPointDuration(byte[] buffer, int offset, Duration duration) {
     long seconds = duration.getSeconds();
     if (seconds < Short.MIN_VALUE || seconds > Short.MAX_VALUE) {
@@ -721,7 +715,7 @@ public final class NtpMessage {
   }
 
   /** Reads the NTP timestamp at the specified offset in the buffer. */
-  // @VisibleForTesting
+  @VisibleForTesting
   static Timestamp64 readTimestamp64(byte[] buffer, int offset) {
     long seconds = read32Unsigned(buffer, offset);
     int fraction = read32Signed(buffer, offset + 4);
@@ -729,7 +723,7 @@ public final class NtpMessage {
   }
 
   /** Writes {@code timestamp} as an NTP timestamp at the specified offset in the buffer. */
-  // @VisibleForTesting
+  @VisibleForTesting
   static void writeTimestamp64(byte[] buffer, int offset, Timestamp64 timestamp) {
     long seconds = timestamp.getEraSeconds();
     int fraction = timestamp.getFractionBits();

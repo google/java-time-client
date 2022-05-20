@@ -20,6 +20,8 @@ import com.google.time.client.base.Instant;
 import com.google.time.client.base.InstantSource;
 import com.google.time.client.base.Logger;
 import com.google.time.client.base.Ticks;
+import com.google.time.client.base.annotations.NonFinalForTesting;
+import com.google.time.client.base.annotations.VisibleForTesting;
 import com.google.time.client.base.impl.Objects;
 import com.google.time.client.base.impl.PlatformRandom;
 import com.google.time.client.sntp.InvalidNtpResponseException;
@@ -29,7 +31,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 /** Reusable, thread-safe, SNTP client logic. */
-// @NonFinalForMocking
+@NonFinalForTesting
 public class SntpClientEngine {
 
   private final Logger logger;
@@ -61,7 +63,7 @@ public class SntpClientEngine {
     SntpConnector.Session session = sntpConnector.createSession();
     NtpMessage request = createRequest(logger, random, clientInstantSource);
     try {
-      while (session.canSend()) {
+      while (session.canTrySend()) {
         SntpSessionResult sessionResult;
         try {
           sessionResult = session.trySend(request);
@@ -90,7 +92,7 @@ public class SntpClientEngine {
     }
   }
 
-  // @VisibleForTesting
+  @VisibleForTesting
   static NtpMessage createRequest(Logger logger, Random random, InstantSource clientInstantSource) {
     NtpMessage request = NtpMessage.createEmptyV3();
     request.setMode(NtpMessage.NTP_MODE_CLIENT);
@@ -119,7 +121,7 @@ public class SntpClientEngine {
    * Processes an SNTP response. Factored this way to enable easier unit testing around this step,
    * leaving the networking logic to be tested elsewhere.
    */
-  // @VisibleForTesting
+  @VisibleForTesting
   public static SntpResultImpl processResponse(
       Logger logger, InstantSource instantSource, SntpSessionResult sessionResult)
       throws InvalidNtpResponseException {
@@ -221,7 +223,7 @@ public class SntpClientEngine {
         adjustedClientInstant);
   }
 
-  // @VisibleForTesting
+  @VisibleForTesting
   static void validateServerResponse(NtpMessage request, NtpMessage response)
       throws InvalidNtpResponseException {
 
@@ -304,7 +306,7 @@ public class SntpClientEngine {
    * @param transmitTimestamp T3: [server]transmitTimestamp
    * @param responseTimestamp T4: [client]responseTimestamp
    */
-  // @VisibleForTesting
+  @VisibleForTesting
   public static Duration calculateClientOffset(
       Timestamp64 requestTimestamp,
       Timestamp64 receiveTimestamp,

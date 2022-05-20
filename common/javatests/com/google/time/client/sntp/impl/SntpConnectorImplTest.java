@@ -89,14 +89,14 @@ public class SntpConnectorImplTest {
     NtpMessage request = NtpMessage.createEmptyV3();
     SntpConnector.Session session = connector.createSession();
     for (int i = 0; i < serverAddresses.length; i++) {
-      assertTrue(session.canSend());
+      assertTrue(session.canTrySend());
       assertThrows(NtpServerNotReachableException.class, () -> session.trySend(request));
       assertEquals(i + 1, testSntpServerWithNetwork.getNetwork().getUdpSocketsCreated().size());
       verify(mockListener)
           .failure(eq(serverAddresses[i].getAddress()), eq(serverAddresses[i].getPort()), any());
     }
 
-    assertFalse(session.canSend());
+    assertFalse(session.canTrySend());
     assertThrows(NtpServerNotReachableException.class, () -> session.trySend(request));
   }
 
@@ -114,7 +114,7 @@ public class SntpConnectorImplTest {
     NtpMessage request = NtpMessage.createEmptyV3();
     SntpConnector.Session session = connector.createSession();
 
-    assertTrue(session.canSend());
+    assertTrue(session.canTrySend());
     assertThrows(NtpServerNotReachableException.class, () -> session.trySend(request));
     assertEquals(1, testSntpServerWithNetwork.getNetwork().getUdpSocketsCreated().size());
     verify(mockListener)
@@ -122,7 +122,7 @@ public class SntpConnectorImplTest {
     reset(mockListener);
 
     network.setFailureMode(FakeNetwork.FAILURE_MODE_NONE);
-    assertTrue(session.canSend());
+    assertTrue(session.canTrySend());
 
     SntpSessionResult result = session.trySend(request);
     assertEquals(2, testSntpServerWithNetwork.getNetwork().getUdpSocketsCreated().size());
@@ -149,7 +149,7 @@ public class SntpConnectorImplTest {
     NtpMessage request = NtpMessage.createEmptyV3();
     SntpConnector.Session session = connector.createSession();
 
-    assertTrue(session.canSend());
+    assertTrue(session.canTrySend());
     assertThrows(NtpServerNotReachableException.class, () -> session.trySend(request));
     assertEquals(0, testSntpServerWithNetwork.getNetwork().getUdpSocketsCreated().size());
     verify(mockListener).serverLookupFailure(eq(badServerAddress.getName()), any());

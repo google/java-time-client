@@ -43,7 +43,7 @@ import java.util.Set;
  * A fake, in-memory, single-threaded implementation of {@link Network} where all UDP sockets
  * sending to known IP addresses lead to an NTP server engine.
  */
-public class FakeNetwork implements Network {
+public final class FakeNetwork implements Network {
 
   public static final int FAILURE_MODE_RECEIVE_TIMEOUT = 0x1;
 
@@ -132,7 +132,7 @@ public class FakeNetwork implements Network {
     return new ServerAddress(inetSocketAddress.getHostName(), inetSocketAddress.getPort());
   }
 
-  public class FakeUdpSocket implements UdpSocket {
+  public final class FakeUdpSocket implements UdpSocket {
 
     private InetSocketAddress localSocketAddress =
         new InetSocketAddress(Inet4Address.getLoopbackAddress(), 11111);

@@ -19,7 +19,7 @@ package com.google.time.client.base.impl;
 import com.google.time.client.base.Logger;
 
 /** A Logger implementation that does nothing. */
-public class NoOpLogger implements Logger {
+public final class NoOpLogger implements Logger {
 
   private static final NoOpLogger INSTANCE = new NoOpLogger();
 

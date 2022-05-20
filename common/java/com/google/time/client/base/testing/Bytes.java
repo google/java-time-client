@@ -17,7 +17,7 @@
 package com.google.time.client.base.testing;
 
 /** Utility methods associated with primitive bytes and {@link java.lang.Byte}. */
-public class Bytes {
+public final class Bytes {
 
   private Bytes() {}
 

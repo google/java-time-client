@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-package com.google.time.client.base;
+package com.google.time.client.base.annotations;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
- * A stand-in for java.time.DateTimeException, which is not available on all platform versions
- * supported by java-time-client.
+ * A source-retention marker for methods that are more public than they would naturally be for
+ * testing.
  */
-public final class DateTimeException extends RuntimeException {
-
-  public DateTimeException(Throwable e) {
-    super(e);
-  }
-
-  public DateTimeException(String msg) {
-    super(msg);
-  }
-}
+@Retention(RetentionPolicy.SOURCE)
+public @interface VisibleForTesting {}

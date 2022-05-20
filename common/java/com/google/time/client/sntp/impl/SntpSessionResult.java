@@ -18,14 +18,15 @@ package com.google.time.client.sntp.impl;
 
 import com.google.time.client.base.Instant;
 import com.google.time.client.base.Ticks;
+import com.google.time.client.base.annotations.VisibleForTesting;
 import com.google.time.client.base.impl.Objects;
 
 /**
  * A result struct for an SNTP interaction with an NTP server. It contains the request, response and
  * client-side information associated with a single round-trip to an NTP server.
  */
-// @VisibleForTesting
-class SntpSessionResult {
+@VisibleForTesting
+final class SntpSessionResult {
 
   // T1 / [client]requestTimestamp according to the client's InstantSource.
   final Instant requestInstant;

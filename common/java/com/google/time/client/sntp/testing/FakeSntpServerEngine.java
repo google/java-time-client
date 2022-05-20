@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Fake NTP server logic that behaves like a real one with configurable quirks. */
-public class FakeSntpServerEngine implements TestSntpServerEngine {
+public final class FakeSntpServerEngine implements TestSntpServerEngine {
 
   public static final int QUIRK_MODE_NON_MATCHING_ORIGINATE_TIME = 0x1;
   public static final int QUIRK_MODE_DO_NOT_MATCH_REQUEST_PROTOCOL_VERSION = 0x2;
