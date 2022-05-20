@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Deletes all symlinks to under android/ and javase/ and generates symlinks from
+# those directories to files under common/. This is the main script developers
+# should run to keep the symlinks under android/ and javase/ directories
+# correct.
 
 PROJECT_ROOT=`dirname $0`
 
