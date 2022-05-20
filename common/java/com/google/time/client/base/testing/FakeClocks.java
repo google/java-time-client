@@ -30,7 +30,7 @@ import com.google.time.client.base.Ticks;
  * with each other automatically each time they are accessed via methods on this class. The
  * individual clocks can be advanced independently via methods on each.
  */
-public class FakeClocks implements Advanceable {
+public final class FakeClocks implements Advanceable {
 
   private final FakeInstantSource fakeInstantSource = new FakeInstantSource();
   private final FakeTicker fakeTicker = new FakeTicker();
@@ -67,7 +67,7 @@ public class FakeClocks implements Advanceable {
    * A fake {@link Ticker} that can be used for tests. This ticker simulates one that increments the
    * tick value every nanosecond.
    */
-  public class FakeTicker extends Ticker implements Advanceable {
+  public final class FakeTicker extends Ticker implements Advanceable {
 
     private long ticksValue;
 
@@ -126,7 +126,7 @@ public class FakeClocks implements Advanceable {
    * <p>By default, this instant source simulates one that returns instants with millisecond
    * precision, but this can be changed.
    */
-  public class FakeInstantSource extends InstantSource implements Advanceable {
+  public final class FakeInstantSource extends InstantSource implements Advanceable {
 
     private Instant instantSourceNow = Instant.ofEpochMilli(0);
     private int precision = InstantSource.PRECISION_MILLIS;

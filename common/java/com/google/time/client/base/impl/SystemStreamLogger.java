@@ -20,7 +20,7 @@ import com.google.time.client.base.Logger;
 import java.io.PrintStream;
 
 /** A Logger implementation that uses System.out and System.err. */
-public class SystemStreamLogger implements Logger {
+public final class SystemStreamLogger implements Logger {
 
   private boolean loggingFine = false;
 

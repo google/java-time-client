@@ -17,7 +17,7 @@ package com.google.time.client.base.impl;
  * Stand-ins for {@link Math} methods which are not available on all platform versions supported by
  * java-time-client.
  */
-public class ExactMath {
+public final class ExactMath {
 
   private ExactMath() {}
 

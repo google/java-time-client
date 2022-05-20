@@ -19,7 +19,7 @@ package com.google.time.client.sntp.testing;
 import com.google.time.client.sntp.impl.NtpMessage;
 import com.google.time.client.sntp.impl.Timestamp64;
 
-/** A read-only, copying wrapper NtpMessage for use in tests. */
+/** A read-only, copying, wrapper NtpMessage for use in tests. */
 public final class TestNtpMessage {
   private final NtpMessage message;
 

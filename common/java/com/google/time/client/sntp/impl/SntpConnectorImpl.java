@@ -40,7 +40,7 @@ import java.util.Arrays;
  * An {@link SntpConnector} that creates {@link Session}s that work through a list of IP addresses
  * for a single {@link ServerAddress}.
  */
-public class SntpConnectorImpl implements SntpConnector {
+public final class SntpConnectorImpl implements SntpConnector {
 
   private final Logger logger;
   private final Network network;
@@ -189,9 +189,7 @@ public class SntpConnectorImpl implements SntpConnector {
                   + responsePacket.getPort());
         }
 
-        // Extract the results
         NtpMessage response = NtpMessage.fromDatagramPacket(responsePacket);
-
         return new SntpSessionResult(
             requestInstant, requestTimeTicks, responseTimeTicks, request, response);
       } catch (SocketException e) {
@@ -200,7 +198,7 @@ public class SntpConnectorImpl implements SntpConnector {
     }
 
     @Override
-    public boolean canSend() {
+    public boolean canTrySend() {
       return serverInetAddresses == null || nextServerIndex < serverInetAddresses.length;
     }
 

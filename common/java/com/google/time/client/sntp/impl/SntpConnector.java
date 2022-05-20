@@ -27,10 +27,10 @@ public interface SntpConnector {
   /**
    * An abstraction over a sequence of IP addresses or server names to communicate with.
    *
-   * <p>Users are expected to call {@link #canSend()} and, if it returns {@code true}, call {@link
-   * #trySend(NtpMessage)}. Each call to {@link #trySend(NtpMessage)} will try the next server in a
-   * list. {@link #trySend(NtpMessage)} can fail due to networking issues (IP addresses not
-   * reachable, no server listening, timeouts).
+   * <p>Users are expected to call {@link #canTrySend()} and, if it returns {@code true}, call
+   * {@link #trySend(NtpMessage)}. Each call to {@link #trySend(NtpMessage)} will try the next
+   * server in a list. {@link #trySend(NtpMessage)} can fail due to networking issues (IP addresses
+   * not reachable, no server listening, timeouts).
    *
    * <p>Every failure to communicate is reported as an {@link NtpServerNotReachableException}.
    * {@link #trySend(NtpMessage)} performs basic syntactic validation, but callers are expected to
@@ -41,9 +41,9 @@ public interface SntpConnector {
 
     /**
      * Returns {@code true} if {@link #trySend(NtpMessage)} can be called, e.g. if there are more IP
-     * addresses to try in this session.
+     * addresses or servers to try in this session.
      */
-    boolean canSend();
+    boolean canTrySend();
 
     /**
      * Attempts a single SNTP request, returning a result on success, or throwing an exception.

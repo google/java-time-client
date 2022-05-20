@@ -22,7 +22,7 @@ package com.google.time.client.base.testing;
  *
  * <p>This is the Java SE variant of this class.
  */
-public class TestEnvironmentUtils {
+public final class TestEnvironmentUtils {
 
   private TestEnvironmentUtils() {}
 

@@ -24,7 +24,7 @@ import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
 /** Testing support for date / time. */
-public class DateTimeUtils {
+public final class DateTimeUtils {
 
   private DateTimeUtils() {}
 

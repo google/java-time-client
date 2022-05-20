@@ -19,7 +19,7 @@ package com.google.time.client.sntp.testing;
 import com.google.time.client.sntp.impl.NtpMessage;
 
 /** A fake NTP server logic that always returns a canned response. */
-public class ReplayingSntpServerEngine implements TestSntpServerEngine {
+public final class ReplayingSntpServerEngine implements TestSntpServerEngine {
 
   private NtpMessage nextResponse;
 

@@ -22,6 +22,7 @@ import com.google.time.client.base.Logger;
 import com.google.time.client.base.Network;
 import com.google.time.client.base.ServerAddress;
 import com.google.time.client.base.Ticker;
+import com.google.time.client.base.annotations.VisibleForTesting;
 import com.google.time.client.base.impl.Objects;
 import com.google.time.client.base.impl.PlatformInstantSource;
 import com.google.time.client.base.impl.PlatformNetwork;
@@ -44,7 +45,7 @@ public final class BasicSntpClient implements SntpClient {
   private final InstantSource clientInstantSource;
   private final SntpClientEngine engine;
 
-  // @VisibleForTesting
+  @VisibleForTesting
   BasicSntpClient(SntpClientEngine engine, InstantSource clientInstantSource) {
     this.engine = Objects.requireNonNull(engine, "engine");
     this.clientInstantSource = Objects.requireNonNull(clientInstantSource, "clientInstantSource");
@@ -97,7 +98,7 @@ public final class BasicSntpClient implements SntpClient {
     private ClientConfig clientConfig;
 
     /** Sets the {@link SntpNetworkListener listener} to use. */
-    public Builder setListener(SntpNetworkListener listener) {
+    public Builder setNetworkListener(SntpNetworkListener listener) {
       this.listener = Objects.requireNonNull(listener);
       return this;
     }

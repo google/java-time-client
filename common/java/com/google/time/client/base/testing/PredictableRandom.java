@@ -19,7 +19,7 @@ package com.google.time.client.base.testing;
 import java.util.Random;
 
 /** A fully deterministic {@link Random} for use in tests. */
-public class PredictableRandom extends Random {
+public final class PredictableRandom extends Random {
 
   private int[] intSequence = new int[] {1};
 

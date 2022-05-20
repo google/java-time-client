@@ -32,8 +32,8 @@ import com.google.time.client.sntp.impl.SntpConnectorImpl;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Callable;
 
-/** A test NTP server for SNTP clients. */
-public class TestSntpServerWithNetwork<E extends TestSntpServerEngine, N extends Network> {
+/** A test NTP server with a network for SNTP clients. */
+public final class TestSntpServerWithNetwork<E extends TestSntpServerEngine, N extends Network> {
 
   /**
    * Creates a test server consisting of a {@link FakeNetwork} with a {@link FakeSntpServerEngine}
@@ -135,9 +135,5 @@ public class TestSntpServerWithNetwork<E extends TestSntpServerEngine, N extends
 
   public void stop() {
     stopAction.run();
-  }
-
-  public int numRequestsReceived() {
-    return serverEngine.numRequestsReceived();
   }
 }

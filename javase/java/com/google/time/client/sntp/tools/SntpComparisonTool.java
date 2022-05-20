@@ -36,7 +36,7 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 
 /** A simple command for reading the time from one or more NTP servers. */
-public class SntpComparisonTool {
+public final class SntpComparisonTool {
 
   private SntpComparisonTool() {}
 

@@ -20,6 +20,7 @@ import com.google.time.client.base.Duration;
 import com.google.time.client.base.Instant;
 import com.google.time.client.base.InstantSource;
 import com.google.time.client.base.Ticks;
+import com.google.time.client.base.annotations.VisibleForTesting;
 import com.google.time.client.base.impl.Objects;
 import com.google.time.client.sntp.InvalidNtpValueException;
 import com.google.time.client.sntp.SntpResult;
@@ -112,8 +113,8 @@ final class SntpResultImpl extends SntpResult {
   public Instant getReferenceTimestampAsInstant(Instant eraThreshold) {
     Timestamp64 referenceTimestamp = getReferenceTimestamp();
 
-    // When the reference timestamp is after the era threshold instant, we assume the reference
-    // timestamp is the same era, otherwise we assume it must be the next era.
+    // When the reference timestamp is after the era threshold instant, the reference timestamp is
+    // assumed to be from the same era, otherwise it is assumed to be from the next era.
     // For example: if the threshold instant is 1/1/1970, which corresponds to x seconds in the NTP
     // era 0, that means timestamp values < x will be considered to be in era 1, i.e. after 2036,
     // while values >= x will be considered to be in era 0, between 1970 and 2036. In practical
@@ -153,7 +154,7 @@ final class SntpResultImpl extends SntpResult {
     return response.getStratum();
   }
 
-  // @VisibleForTesting
+  @VisibleForTesting
   Instant getResponseInstant() {
     return responseInstant;
   }
@@ -171,7 +172,7 @@ final class SntpResultImpl extends SntpResult {
    * Returns the approximate duration it took from the NTP request leaving the client to the NTP
    * response being received as measured by the client.
    */
-  // @VisibleForTesting
+  @VisibleForTesting
   Duration getTotalTransactionDuration() {
     return totalTransactionDuration;
   }

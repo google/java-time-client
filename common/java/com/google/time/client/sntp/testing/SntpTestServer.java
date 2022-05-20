@@ -27,24 +27,16 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 
-class SntpTestServer {
+/** Exposes a {@link TestSntpServerEngine} on a real network socket. */
+final class SntpTestServer {
 
   private final Object lock = new Object();
-
   private final DatagramSocket socket;
-
   private final Thread mListeningThread;
-
-  private final TestSntpServerEngine engine;
-
-  private int mRcvd;
-
-  private int mSent;
-
   private volatile boolean running;
 
   public SntpTestServer(TestSntpServerEngine engine) {
-    this.engine = Objects.requireNonNull(engine);
+    Objects.requireNonNull(engine);
     socket = makeServerSocket();
     running = true;
 
@@ -64,8 +56,6 @@ class SntpTestServer {
 
                 NtpMessage request = NtpMessage.fromDatagramPacket(requestPacket);
                 synchronized (lock) {
-                  mRcvd++;
-
                   NtpMessage response = engine.processRequest(request);
                   byte[] responseBytes = response.toByteArray();
                   DatagramPacket responsePacket =
@@ -81,7 +71,6 @@ class SntpTestServer {
                     fail("datagram send error: " + e);
                     break;
                   }
-                  mSent++;
                 }
               }
             } finally {
