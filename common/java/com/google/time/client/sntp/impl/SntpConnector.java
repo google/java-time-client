@@ -16,6 +16,7 @@
 
 package com.google.time.client.sntp.impl;
 
+import com.google.time.client.sntp.InvalidNtpResponseException;
 import com.google.time.client.sntp.NtpServerNotReachableException;
 
 /** The interface for classes that handle routing requests to servers. */
@@ -25,38 +26,36 @@ public interface SntpConnector {
   Session createSession();
 
   /**
-   * An abstraction over a sequence of IP addresses or server names to communicate with.
+   * An abstraction over a sequence of IP addresses to communicate with.
    *
    * <p>Users are expected to call {@link #canTrySend()} and, if it returns {@code true}, call
    * {@link #trySend(NtpMessage)}. Each call to {@link #trySend(NtpMessage)} will try the next
-   * server in a list. {@link #trySend(NtpMessage)} can fail due to networking issues (IP addresses
+   * address in a list. {@link #trySend(NtpMessage)} can fail due to networking issues (IP addresses
    * not reachable, no server listening, timeouts).
    *
    * <p>Every failure to communicate is reported as an {@link NtpServerNotReachableException}.
-   * {@link #trySend(NtpMessage)} performs basic syntactic validation, but callers are expected to
-   * validate the response and call {@link #reportInvalidResponse(SntpSessionResult)} if it is found
-   * to be invalid.
+   * {@link #trySend(NtpMessage)} performs basic syntactic validation of the response, but callers
+   * are expected to validate the response and call {@link #reportInvalidResponse(SntpSessionResult,
+   * InvalidNtpResponseException)} if it is found to be invalid.
    */
   interface Session {
 
     /**
      * Returns {@code true} if {@link #trySend(NtpMessage)} can be called, e.g. if there are more IP
-     * addresses or servers to try in this session.
+     * addresses to try in this session.
      */
     boolean canTrySend();
 
     /**
-     * Attempts a single SNTP request, returning a result on success, or throwing an exception.
+     * Attempts an SNTP request/response with a single IP address, returning a result on success, or
+     * throwing an exception.
      *
      * <p>The result returned may still be invalid according to the SNTP spec. See {@link Session}
      * for details.
      */
     SntpSessionResult trySend(NtpMessage request) throws NtpServerNotReachableException;
 
-    /**
-     * Report the response from the previous {@link #trySend} call was invalid. The connector could
-     * choose to stop using the server for a period.
-     */
-    void reportInvalidResponse(SntpSessionResult sessionResult);
+    /** Reports that the response from the previous {@link #trySend} call was invalid. */
+    void reportInvalidResponse(SntpSessionResult sessionResult, InvalidNtpResponseException reason);
   }
 }

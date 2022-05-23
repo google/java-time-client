@@ -55,4 +55,20 @@ final class SntpSessionResult {
     this.request = Objects.requireNonNull(request, "request");
     this.response = Objects.requireNonNull(response, "response");
   }
+
+  @Override
+  public String toString() {
+    return "SntpSessionResult{"
+        + "requestInstant="
+        + requestInstant
+        + ", requestTimeTicks="
+        + requestTimeTicks
+        + ", responseTimeTicks="
+        + responseTimeTicks
+        + ", request="
+        + request
+        + ", response="
+        + response
+        + '}';
+  }
 }

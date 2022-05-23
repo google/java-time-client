@@ -61,39 +61,64 @@ public class SntpClientEngine {
 
     NtpServerNotReachableException overallException = new NtpServerNotReachableException("");
     SntpConnector.Session session = sntpConnector.createSession();
-    NtpMessage request = createRequest(logger, random, clientInstantSource);
+    NtpMessage request = createRequest(random, clientInstantSource);
+    if (logger.isLoggingFine()) {
+      logger.fine("requestInstant(): Sending request: " + request);
+    }
     try {
       while (session.canTrySend()) {
         SntpSessionResult sessionResult;
         try {
           sessionResult = session.trySend(request);
+          if (logger.isLoggingFine()) {
+            logger.fine("requestInstant(): Response received sessionResult=" + sessionResult);
+          }
         } catch (NtpServerNotReachableException e) {
+          if (logger.isLoggingFine()) {
+            logger.fine("requestInstant(): Server not reachable", e);
+          }
           overallException.addSuppressed(e);
           // Try the next server.
           continue;
         }
 
         try {
-          return processResponse(logger, clientInstantSource, sessionResult);
+          SntpResultImpl sntpResult = processResponse(clientInstantSource, sessionResult);
+          if (logger.isLoggingFine()) {
+            logger.fine(
+                "requestInstant(): Response from address="
+                    + sessionResult.response.getInetAddress()
+                    + " is valid: sntpResult="
+                    + sntpResult);
+          }
+          return sntpResult;
         } catch (InvalidNtpResponseException e) {
-          session.reportInvalidResponse(sessionResult);
+          if (logger.isLoggingFine()) {
+            logger.fine(
+                "requestInstant(): Response from address="
+                    + sessionResult.response.getInetAddress()
+                    + " is invalid.",
+                e);
+          }
+          session.reportInvalidResponse(sessionResult, e);
           overallException.addSuppressed(e);
           // Repeat the loop if possible.
         }
       }
       // The loop terminates early if it is successful. Reaching here must mean failure.
-      logger.fine("requestTime(): Failed to communicate with all servers", overallException);
+      logger.fine(
+          "requestInstant(): Failed to communicate with all session servers", overallException);
       throw overallException;
     } catch (Exception e) {
       if (logger.isLoggingFine()) {
-        logger.fine("requestTime() failed: " + e);
+        logger.fine("requestInstant() failed", e);
       }
       throw e;
     }
   }
 
   @VisibleForTesting
-  static NtpMessage createRequest(Logger logger, Random random, InstantSource clientInstantSource) {
+  static NtpMessage createRequest(Random random, InstantSource clientInstantSource) {
     NtpMessage request = NtpMessage.createEmptyV3();
     request.setMode(NtpMessage.NTP_MODE_CLIENT);
 
@@ -111,9 +136,6 @@ public class SntpClientEngine {
       requestTransmitTimestamp = requestTransmitTimestamp.randomizeSubMillis(random);
     }
     request.setTransmitTimestamp(requestTransmitTimestamp);
-    if (logger.isLoggingFine()) {
-      logger.fine("Sending request: " + request);
-    }
     return request;
   }
 
@@ -123,7 +145,7 @@ public class SntpClientEngine {
    */
   @VisibleForTesting
   public static SntpResultImpl processResponse(
-      Logger logger, InstantSource instantSource, SntpSessionResult sessionResult)
+      InstantSource instantSource, SntpSessionResult sessionResult)
       throws InvalidNtpResponseException {
 
     NtpMessage request = sessionResult.request;
@@ -142,13 +164,6 @@ public class SntpClientEngine {
     final Timestamp64 receiveTimestamp = response.getReceiveTimestamp();
     // T3 / [server]transmitTimestamp
     final Timestamp64 transmitTimestamp = response.getTransmitTimestamp();
-
-    if (logger.isLoggingFine()) {
-      logger.fine("requestTimeStamp:" + requestTimestamp);
-      logger.fine("requestTimeTicks:" + requestTimeTicks);
-      logger.fine("Response received: " + response);
-      logger.fine("responseTimeTicks:" + responseTimeTicks);
-    }
 
     // totalTransactionDuration is the elapsed time between the request being sent and the
     // response being received. The spec obtains it using T4 - T1, but we use the
@@ -196,18 +211,9 @@ public class SntpClientEngine {
     final Instant responseInstant = requestInstant.plus(totalTransactionDuration);
     final Timestamp64 responseTimestamp = Timestamp64.fromInstant(responseInstant);
 
-    if (logger.isLoggingFine()) {
-      logger.fine("responseTime:" + responseInstant);
-      logger.fine("responseTimestamp:" + responseTimestamp);
-    }
-
     Duration clientOffsetDuration =
         calculateClientOffset(
             requestTimestamp, receiveTimestamp, transmitTimestamp, responseTimestamp);
-
-    if (logger.isLoggingFine()) {
-      logger.fine("round trip: " + roundTripDuration + ", client offset: " + clientOffsetDuration);
-    }
 
     Instant adjustedClientInstant = responseInstant.plus(clientOffsetDuration);
 

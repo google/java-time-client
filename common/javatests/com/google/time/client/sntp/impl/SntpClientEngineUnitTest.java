@@ -162,8 +162,7 @@ public class SntpClientEngineUnitTest {
     FakeInstantSource instantSource = fakeClocks.getFakeInstantSource();
     instantSource.setEpochMillis(1_234_567_891L);
 
-    NtpMessage requestMessage =
-        SntpClientEngine.createRequest(NoOpLogger.instance(), random, instantSource);
+    NtpMessage requestMessage = SntpClientEngine.createRequest(random, instantSource);
     assertDefaultRequestFields(requestMessage);
 
     // These are the important properties.
@@ -185,8 +184,7 @@ public class SntpClientEngineUnitTest {
     instantSource.setPrecision(InstantSource.PRECISION_NANOS);
     instantSource.setEpochNanos(1_234_567_891L);
 
-    NtpMessage requestMessage =
-        SntpClientEngine.createRequest(NoOpLogger.instance(), random, instantSource);
+    NtpMessage requestMessage = SntpClientEngine.createRequest(random, instantSource);
     assertDefaultRequestFields(requestMessage);
 
     // These are the important properties.
@@ -316,8 +314,7 @@ public class SntpClientEngineUnitTest {
         new SntpSessionResult(
             requestInstant, requestTimeTicks, responseTimeTicks, request, response);
     SntpResultImpl sntpResult =
-        SntpClientEngine.processResponse(
-            NoOpLogger.instance(), fakeClocks.getFakeInstantSource(), sessionResult);
+        SntpClientEngine.processResponse(fakeClocks.getFakeInstantSource(), sessionResult);
 
     assertEquals(response.getInetAddress(), sntpResult.getServerInetAddress());
     // offset_calculation: LOGTOD(rpkt->precision): 0.000001
@@ -360,14 +357,12 @@ public class SntpClientEngineUnitTest {
               request,
               responseMessage);
       if (i == NTP_MODE_SERVER) {
-        SntpClientEngine.processResponse(
-            NoOpLogger.instance(), fakeClocks.getFakeInstantSource(), sessionResult);
+        SntpClientEngine.processResponse(fakeClocks.getFakeInstantSource(), sessionResult);
       } else {
         assertThrows(
             InvalidNtpResponseException.class,
             () ->
-                SntpClientEngine.processResponse(
-                    NoOpLogger.instance(), fakeClocks.getFakeInstantSource(), sessionResult));
+                SntpClientEngine.processResponse(fakeClocks.getFakeInstantSource(), sessionResult));
       }
     }
   }
@@ -395,9 +390,7 @@ public class SntpClientEngineUnitTest {
             responseMessage);
     assertThrows(
         InvalidNtpResponseException.class,
-        () ->
-            SntpClientEngine.processResponse(
-                NoOpLogger.instance(), fakeClocks.getFakeInstantSource(), sessionResult));
+        () -> SntpClientEngine.processResponse(fakeClocks.getFakeInstantSource(), sessionResult));
   }
 
   /**
