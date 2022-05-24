@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-package com.google.time.client.base.impl;
+package com.google.time.client.base;
 
 import android.os.SystemClock;
-import com.google.time.client.base.Duration;
-import com.google.time.client.base.Ticker;
-import com.google.time.client.base.Ticks;
 
 /**
  * A {@link Ticker} that provides nanosecond-precision access to the Android kernel's CLOCK_BOOTTIME

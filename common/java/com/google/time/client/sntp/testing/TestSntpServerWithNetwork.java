@@ -29,7 +29,6 @@ import com.google.time.client.sntp.BasicSntpClient;
 import com.google.time.client.sntp.NoOpSntpNetworkListener;
 import com.google.time.client.sntp.impl.SntpConnector;
 import com.google.time.client.sntp.impl.SntpConnectorImpl;
-
 import java.net.InetSocketAddress;
 import java.util.concurrent.Callable;
 
