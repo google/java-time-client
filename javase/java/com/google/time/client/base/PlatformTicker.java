@@ -14,11 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.time.client.base.impl;
-
-import com.google.time.client.base.Duration;
-import com.google.time.client.base.Ticker;
-import com.google.time.client.base.Ticks;
+package com.google.time.client.base;
 
 /**
  * A {@link Ticker} that provides nanosecond-precision access to Java's {@link System#nanoTime()}

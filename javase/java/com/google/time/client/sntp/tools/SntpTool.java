@@ -18,9 +18,9 @@ package com.google.time.client.sntp.tools;
 
 import com.google.time.client.base.Duration;
 import com.google.time.client.base.InstantSource;
+import com.google.time.client.base.PlatformTicker;
 import com.google.time.client.base.ServerAddress;
 import com.google.time.client.base.Ticker;
-import com.google.time.client.base.impl.PlatformTicker;
 import com.google.time.client.base.impl.SystemStreamLogger;
 import com.google.time.client.sntp.BasicSntpClient;
 import com.google.time.client.sntp.BasicSntpClient.ClientConfig;

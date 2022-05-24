@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package com.google.time.client.base.impl;
+package com.google.time.client.base;
 
-import static com.google.time.client.base.testing.Bytes.bytes;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-
-import com.google.time.client.base.Duration;
-import com.google.time.client.base.Network;
 import com.google.time.client.base.Network.UdpSocket;
+
+import org.junit.Test;
+
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketAddress;
-import org.junit.Test;
+
+import static com.google.time.client.base.testing.Bytes.bytes;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 public class PlatformNetworkTest {
 

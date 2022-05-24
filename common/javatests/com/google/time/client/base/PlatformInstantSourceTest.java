@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package com.google.time.client.base.impl;
+package com.google.time.client.base;
+
+import org.junit.Test;
 
 import static com.google.time.client.base.impl.DateTimeConstants.NANOS_PER_MILLISECOND;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-
-import com.google.time.client.base.Instant;
-import com.google.time.client.base.InstantSource;
-import org.junit.Test;
 
 public class PlatformInstantSourceTest {
 

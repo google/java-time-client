@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.google.time.client.base.impl;
+package com.google.time.client.base;
 
-import com.google.time.client.base.Duration;
-import com.google.time.client.base.Ticker;
-import com.google.time.client.base.Ticks;
+import com.google.time.client.base.impl.ExactMath;
+import com.google.time.client.base.impl.Objects;
 
 /**
  * A {@link Ticker} implementation that applies a linear adjustment to a "base" ticker. Used for

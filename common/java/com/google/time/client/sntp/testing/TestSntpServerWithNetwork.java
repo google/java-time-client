@@ -19,16 +19,17 @@ package com.google.time.client.sntp.testing;
 import com.google.time.client.base.Duration;
 import com.google.time.client.base.InstantSource;
 import com.google.time.client.base.Network;
+import com.google.time.client.base.PlatformNetwork;
 import com.google.time.client.base.ServerAddress;
 import com.google.time.client.base.Ticker;
 import com.google.time.client.base.impl.NoOpLogger;
 import com.google.time.client.base.impl.Objects;
-import com.google.time.client.base.impl.PlatformNetwork;
 import com.google.time.client.base.testing.FakeClocks;
 import com.google.time.client.sntp.BasicSntpClient;
 import com.google.time.client.sntp.NoOpSntpNetworkListener;
 import com.google.time.client.sntp.impl.SntpConnector;
 import com.google.time.client.sntp.impl.SntpConnectorImpl;
+
 import java.net.InetSocketAddress;
 import java.util.concurrent.Callable;
 
