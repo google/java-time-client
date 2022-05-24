@@ -43,7 +43,8 @@ public final class Ticks {
   }
 
   /**
-   * Creates a {@link Ticks} from an originating ticker and a value.
+   * Creates a {@link Ticks} from an originating ticker and a value. This method should only be
+   * called from {@link Ticker#ticks()} implementations and in tests.
    *
    * @param originTicker - the originating ticker
    * @param value the value from a Ticker
@@ -104,7 +105,7 @@ public final class Ticks {
     return originTicker;
   }
 
-  /** Returns the ticks value. */
+  /** Returns the wrapped ticks value. */
   long getValue() {
     return value;
   }

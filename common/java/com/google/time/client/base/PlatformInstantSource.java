@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.time.client.base.impl;
-
-import com.google.time.client.base.Instant;
-import com.google.time.client.base.InstantSource;
+package com.google.time.client.base;
 
 /**
  * An {@link InstantSource} that provides millisecond-precision access to the default system clock,

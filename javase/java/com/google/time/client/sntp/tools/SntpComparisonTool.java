@@ -19,13 +19,14 @@ package com.google.time.client.sntp.tools;
 import com.google.time.client.base.Duration;
 import com.google.time.client.base.Logger;
 import com.google.time.client.base.Network;
+import com.google.time.client.base.PlatformNetwork;
 import com.google.time.client.base.ServerAddress;
-import com.google.time.client.base.impl.PlatformNetwork;
 import com.google.time.client.base.impl.SystemStreamLogger;
 import com.google.time.client.sntp.BasicSntpClient;
 import com.google.time.client.sntp.BasicSntpClient.ClientConfig;
 import com.google.time.client.sntp.NtpServerNotReachableException;
 import com.google.time.client.sntp.SntpResult;
+
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;

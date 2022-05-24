@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package com.google.time.client.base.impl;
+package com.google.time.client.base;
 
-import com.google.time.client.base.Duration;
-import com.google.time.client.base.Network;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;

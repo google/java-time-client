@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package com.google.time.client.base.impl;
+package com.google.time.client.base;
+
+import com.google.time.client.base.testing.TestEnvironmentUtils;
+
+import org.junit.Test;
 
 import static com.google.time.client.base.impl.DateTimeConstants.NANOS_PER_MILLISECOND;
 import static org.junit.Assert.assertTrue;
-
-import com.google.time.client.base.Duration;
-import com.google.time.client.base.Ticker;
-import com.google.time.client.base.Ticks;
-import com.google.time.client.base.testing.TestEnvironmentUtils;
-import org.junit.Test;
 
 public class PlatformTickerTest {
 
