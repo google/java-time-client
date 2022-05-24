@@ -1,3 +1,5 @@
+This is not an officially supported Google product.
+
 # java-time-client
 
 A client library to support time synchronization written in the Java language.
