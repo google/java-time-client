@@ -1,0 +1,1 @@
+../../../../../../../../common/javatests/com/google/time/client/base/impl/LinearAdjustmentTickerTest.java
