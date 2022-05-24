@@ -16,12 +16,11 @@
 
 package com.google.time.client.base;
 
-import com.google.time.client.base.testing.FakeClocks;
-
-import org.junit.Test;
-
 import static com.google.time.client.base.impl.DateTimeConstants.NANOS_PER_SECOND;
 import static org.junit.Assert.assertEquals;
+
+import com.google.time.client.base.testing.FakeClocks;
+import org.junit.Test;
 
 public class LinearAdjustmentTickerTest {
 

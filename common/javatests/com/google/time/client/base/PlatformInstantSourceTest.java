@@ -16,11 +16,11 @@
 
 package com.google.time.client.base;
 
-import org.junit.Test;
-
 import static com.google.time.client.base.impl.DateTimeConstants.NANOS_PER_MILLISECOND;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
 
 public class PlatformInstantSourceTest {
 

@@ -16,12 +16,11 @@
 
 package com.google.time.client.base;
 
-import com.google.time.client.base.testing.TestEnvironmentUtils;
-
-import org.junit.Test;
-
 import static com.google.time.client.base.impl.DateTimeConstants.NANOS_PER_MILLISECOND;
 import static org.junit.Assert.assertTrue;
+
+import com.google.time.client.base.testing.TestEnvironmentUtils;
+import org.junit.Test;
 
 public class PlatformTickerTest {
 

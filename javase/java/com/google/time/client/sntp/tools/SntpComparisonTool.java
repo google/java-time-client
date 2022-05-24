@@ -26,7 +26,6 @@ import com.google.time.client.sntp.BasicSntpClient;
 import com.google.time.client.sntp.BasicSntpClient.ClientConfig;
 import com.google.time.client.sntp.NtpServerNotReachableException;
 import com.google.time.client.sntp.SntpResult;
-
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
