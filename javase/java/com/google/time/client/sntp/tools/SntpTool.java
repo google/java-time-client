@@ -46,7 +46,7 @@ public final class SntpTool {
     Ticker clientTicker = PlatformTicker.instance();
     BasicSntpClient client =
         new BasicSntpClient.Builder()
-            .setConfig(clientConfig)
+            .setClientConfig(clientConfig)
             .setClientTicker(clientTicker)
             .setLogger(logger)
             .build();

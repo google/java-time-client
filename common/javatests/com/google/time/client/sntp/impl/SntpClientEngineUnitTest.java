@@ -156,13 +156,37 @@ public class SntpClientEngineUnitTest {
       EARLY_ERA_RESPONSE.getOriginateTimestamp().toInstant(1);
 
   @Test
-  public void createRequest_millisInstantSource() {
+  public void createRequest_clientDataMinimization() {
+    PredictableRandom random = new PredictableRandom(1234, 5678);
+    FakeClocks fakeClocks = new FakeClocks();
+    FakeInstantSource instantSource = fakeClocks.getFakeInstantSource();
+    instantSource.setEpochMillis(1_234_567_891L);
+
+    boolean clientDataMinimization = true;
+    NtpMessage requestMessage =
+        SntpClientEngine.createRequest(clientDataMinimization, random, instantSource);
+    assertDefaultRequestFields(requestMessage);
+
+    // These are the important properties.
+    assertEquals(NtpMessage.NTP_MODE_CLIENT, requestMessage.getMode());
+    assertEquals(3, requestMessage.getVersionNumber());
+
+    // Check for randomization of the transmit timestamp.
+    Timestamp64 expectedTransmitTimestamp =
+        Timestamp64.fromComponents(random.nextInt() & 0xFFFF_FFFFL, random.nextInt());
+    assertEquals(expectedTransmitTimestamp, requestMessage.getTransmitTimestamp());
+  }
+
+  @Test
+  public void createRequest_noClientDataMinimization_millisInstantSource() {
     PredictableRandom random = new PredictableRandom();
     FakeClocks fakeClocks = new FakeClocks();
     FakeInstantSource instantSource = fakeClocks.getFakeInstantSource();
     instantSource.setEpochMillis(1_234_567_891L);
 
-    NtpMessage requestMessage = SntpClientEngine.createRequest(random, instantSource);
+    boolean clientDataMinimization = false;
+    NtpMessage requestMessage =
+        SntpClientEngine.createRequest(clientDataMinimization, random, instantSource);
     assertDefaultRequestFields(requestMessage);
 
     // These are the important properties.
@@ -177,14 +201,16 @@ public class SntpClientEngineUnitTest {
   }
 
   @Test
-  public void createRequest_nanosInstantSource() {
+  public void createRequest_noClientDataMinimization_nanosInstantSource() {
     PredictableRandom random = new PredictableRandom();
     FakeClocks fakeClocks = new FakeClocks();
     FakeInstantSource instantSource = fakeClocks.getFakeInstantSource();
     instantSource.setPrecision(InstantSource.PRECISION_NANOS);
     instantSource.setEpochNanos(1_234_567_891L);
 
-    NtpMessage requestMessage = SntpClientEngine.createRequest(random, instantSource);
+    boolean clientDataMinimization = false;
+    NtpMessage requestMessage =
+        SntpClientEngine.createRequest(clientDataMinimization, random, instantSource);
     assertDefaultRequestFields(requestMessage);
 
     // These are the important properties.

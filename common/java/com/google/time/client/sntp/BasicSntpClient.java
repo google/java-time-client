@@ -93,6 +93,7 @@ public final class BasicSntpClient implements SntpClient {
     private InstantSource clientInstantSource = PlatformInstantSource.instance();
     private Ticker clientTicker = PlatformTicker.instance();
     private Network network = PlatformNetwork.instance();
+    private boolean clientDataMinimizationEnabled = true;
 
     // Properties without defaults.
     private ClientConfig clientConfig;
@@ -127,8 +128,18 @@ public final class BasicSntpClient implements SntpClient {
       return this;
     }
 
+    /**
+     * Sets whether to use client data minimization suggested in <a
+     * href="https://datatracker.ietf.org/doc/html/draft-ietf-ntp-data-minimization-04"
+     * >draft-ietf-ntp-data-minimization-04</a>. The default is enabled.
+     */
+    public Builder setClientDataMinimizationEnabled(boolean enabled) {
+      this.clientDataMinimizationEnabled = enabled;
+      return this;
+    }
+
     /** Sets the {@link ClientConfig config} to use. */
-    public Builder setConfig(ClientConfig clientConfig) {
+    public Builder setClientConfig(ClientConfig clientConfig) {
       this.clientConfig = Objects.requireNonNull(clientConfig);
       return this;
     }
@@ -142,6 +153,7 @@ public final class BasicSntpClient implements SntpClient {
           new SntpConnectorImpl(
               logger, network, clientInstantSource, clientTicker, listener, clientConfig);
       SntpClientEngine engine = new SntpClientEngine(logger, sntpConnector);
+      engine.setClientDataMinimizationEnabled(clientDataMinimizationEnabled);
       return new BasicSntpClient(engine, clientInstantSource);
     }
   }
