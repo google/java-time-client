@@ -58,7 +58,7 @@ public final class SntpComparisonTool {
         ClientConfig clientConfig = createIpAddressConfig(expandedAddress, serverAddress.getPort());
 
         BasicSntpClient client =
-            new BasicSntpClient.Builder().setConfig(clientConfig).setLogger(logger).build();
+            new BasicSntpClient.Builder().setClientConfig(clientConfig).setLogger(logger).build();
         try {
           SntpResult sntpResult = client.requestInstant();
 

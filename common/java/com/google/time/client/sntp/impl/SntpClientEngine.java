@@ -37,6 +37,8 @@ public class SntpClientEngine {
   private final Logger logger;
   private final SntpConnector sntpConnector;
   private final Random random;
+  // Default to true, as this is the safest state.
+  private boolean clientDataMinimizationEnabled = true;
 
   public SntpClientEngine(Logger logger, SntpConnector sntpConnector) {
     this(logger, sntpConnector, PlatformRandom.getDefaultRandom());
@@ -46,6 +48,11 @@ public class SntpClientEngine {
     this.logger = Objects.requireNonNull(logger, "logger");
     this.sntpConnector = Objects.requireNonNull(sntpConnector, "sntpConnector");
     this.random = Objects.requireNonNull(random, "random");
+  }
+
+  /** Sets whether client data minimization is enabled. The default is enabled. */
+  public void setClientDataMinimizationEnabled(boolean enabled) {
+    clientDataMinimizationEnabled = enabled;
   }
 
   /**
@@ -61,7 +68,7 @@ public class SntpClientEngine {
 
     NtpServerNotReachableException overallException = new NtpServerNotReachableException("");
     SntpConnector.Session session = sntpConnector.createSession();
-    NtpMessage request = createRequest(random, clientInstantSource);
+    NtpMessage request = createRequest(clientDataMinimizationEnabled, random, clientInstantSource);
     if (logger.isLoggingFine()) {
       logger.fine("requestInstant(): Sending request: " + request);
     }
@@ -118,22 +125,32 @@ public class SntpClientEngine {
   }
 
   @VisibleForTesting
-  static NtpMessage createRequest(Random random, InstantSource clientInstantSource) {
+  static NtpMessage createRequest(
+      boolean clientDataMinimization, Random random, InstantSource clientInstantSource) {
     NtpMessage request = NtpMessage.createEmptyV3();
     request.setMode(NtpMessage.NTP_MODE_CLIENT);
 
     // Since it doesn't really matter what we send here (the server shouldn't use it for anything
     // except round-tripping), the transmit timestamp can be different from the value actually
     // used by the client.
-    Instant requestTransmitInstant = clientInstantSource.instant();
-    Timestamp64 requestTransmitTimestamp = Timestamp64.fromInstant(requestTransmitInstant);
-    if (clientInstantSource.getPrecision() <= InstantSource.PRECISION_MILLIS) {
-      // requestTransmitTimestamp is treated as a nonce, so randomize the sub-millis nanos to
-      // ensure it is less predictable. This introduces an error, but only up to 1 millis, e.g.
-      // requestTransmitTimestamp could now be in the future or in the past, but less than 1 millis.
-      // The value is not used by the client again, and the server also shouldn't be using it for
-      // anything that affects the response we get (besides replaying it back to the client).
-      requestTransmitTimestamp = requestTransmitTimestamp.randomizeSubMillis(random);
+    Timestamp64 requestTransmitTimestamp;
+    if (clientDataMinimization) {
+      // As per: https://datatracker.ietf.org/doc/html/draft-ietf-ntp-data-minimization-04
+      // Using an entirely random timestamp is better than revealing client clock data.
+      long eraSeconds = random.nextInt() & 0xFFFF_FFFFL;
+      requestTransmitTimestamp = Timestamp64.fromComponents(eraSeconds, random.nextInt());
+    } else {
+      Instant requestTransmitInstant = clientInstantSource.instant();
+      requestTransmitTimestamp = Timestamp64.fromInstant(requestTransmitInstant);
+      if (clientInstantSource.getPrecision() <= InstantSource.PRECISION_MILLIS) {
+        // requestTransmitTimestamp is treated as a nonce, so randomize the sub-millis nanos to
+        // ensure it is less predictable. This introduces an error, but only up to 1 millis, e.g.
+        // requestTransmitTimestamp could now be in the future or in the past, but less than 1
+        // millis.
+        // The value is not used by the client again, and the server also shouldn't be using it for
+        // anything that affects the response we get (besides replaying it back to the client).
+        requestTransmitTimestamp = requestTransmitTimestamp.randomizeSubMillis(random);
+      }
     }
     request.setTransmitTimestamp(requestTransmitTimestamp);
     return request;
