@@ -28,8 +28,11 @@ import com.google.time.client.sntp.testing.FakeNetwork;
 import com.google.time.client.sntp.testing.FakeSntpServerEngine;
 import com.google.time.client.sntp.testing.TestSntpServerWithNetwork;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 /** Unit tests for {@link SntpClientEngine} networking. */
+@RunWith(JUnit4.class)
 public class SntpClientEngineNetworkingTest {
 
   @Test

@@ -158,7 +158,8 @@ public final class SntpConnectorImpl implements SntpConnector {
                 "Timeout waiting for response from "
                     + requestPacket.getAddress()
                     + ":"
-                    + requestPacket.getPort());
+                    + requestPacket.getPort(),
+                e);
           } catch (IOException e) {
             throw new NtpServerNotReachableException("Unable to receive NTP response", e);
           }

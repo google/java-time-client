@@ -77,6 +77,7 @@ public final class Duration implements Comparable<Duration> {
     return delegate.getSeconds();
   }
 
+  @SuppressWarnings("JavaDurationGetSecondsGetNano")
   public int getNano() {
     return delegate.getNano();
   }

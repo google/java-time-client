@@ -25,7 +25,10 @@ import com.google.time.client.base.Instant;
 import com.google.time.client.base.impl.DateTimeConstants;
 import com.google.time.client.base.testing.PredictableRandom;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
+@RunWith(JUnit4.class)
 public class Timestamp64Test {
 
   @Test

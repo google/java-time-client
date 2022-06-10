@@ -26,13 +26,16 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketAddress;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
+@RunWith(JUnit4.class)
 public class PlatformNetworkTest {
 
   @Test
   public void getAllByName() throws Exception {
     Network network = PlatformNetwork.instance();
-    String hostString = "www.google.com";
+    String hostString = "localhost";
     assertArrayEquals(InetAddress.getAllByName(hostString), network.getAllByName(hostString));
   }
 

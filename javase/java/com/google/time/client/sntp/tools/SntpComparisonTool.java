@@ -134,6 +134,7 @@ public final class SntpComparisonTool {
     return buf.toString();
   }
 
+  @SuppressWarnings("MixedMutabilityReturnType")
   private static List<InetSocketAddress> expandAddress(
       Logger logger, Network network, ServerAddress serverAddress) {
     List<InetSocketAddress> expandedAddresses = new ArrayList<>();

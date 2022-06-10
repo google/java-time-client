@@ -22,7 +22,10 @@ import static org.junit.Assert.fail;
 
 import com.google.time.client.base.impl.ExactMath;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
+@RunWith(JUnit4.class)
 public class TickerTest {
 
   @Test

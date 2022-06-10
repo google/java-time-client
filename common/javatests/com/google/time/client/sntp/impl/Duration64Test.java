@@ -24,7 +24,10 @@ import static org.junit.Assert.assertTrue;
 import com.google.time.client.base.Duration;
 import com.google.time.client.base.Instant;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
+@RunWith(JUnit4.class)
 public class Duration64Test {
 
   @Test

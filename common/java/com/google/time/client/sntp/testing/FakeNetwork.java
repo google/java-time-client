@@ -137,8 +137,6 @@ public final class FakeNetwork implements Network {
     private InetSocketAddress localSocketAddress =
         new InetSocketAddress(Inet4Address.getLoopbackAddress(), 11111);
 
-    private Duration soTimeout;
-
     private List<DatagramPacket> packetsSent = new ArrayList<>();
 
     private List<DatagramPacket> packetsReceived = new ArrayList<>();
@@ -155,7 +153,7 @@ public final class FakeNetwork implements Network {
     @Override
     public void setSoTimeout(Duration timeout) throws SocketException {
       checkSocketOpen();
-      soTimeout = timeout;
+      // timeout value is currently ignored.
     }
 
     @Override
