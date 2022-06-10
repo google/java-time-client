@@ -26,7 +26,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
+@RunWith(JUnit4.class)
 public class InstantTest {
 
   @Test
@@ -37,7 +40,6 @@ public class InstantTest {
     assertEquals(-31557014167219200L, Instant.MIN.getEpochSecond());
     assertEquals(0, Instant.MIN.getNano());
 
-    Instant maxInstant = Instant.ofEpochSecond(Instant.MAX.getEpochSecond(), Instant.MAX.getNano());
     assertThrows(
         DateTimeException.class,
         () -> Instant.ofEpochSecond(Instant.MAX.getEpochSecond() + 1, Instant.MAX.getNano()));
@@ -45,7 +47,6 @@ public class InstantTest {
         DateTimeException.class,
         () -> Instant.ofEpochSecond(Instant.MAX.getEpochSecond(), Instant.MAX.getNano() + 1));
 
-    Instant minInstant = Instant.ofEpochSecond(Instant.MIN.getEpochSecond(), Instant.MIN.getNano());
     assertThrows(
         DateTimeException.class,
         () -> Instant.ofEpochSecond(Instant.MIN.getEpochSecond() - 1, Instant.MIN.getNano()));

@@ -49,7 +49,10 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.util.Arrays;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
+@RunWith(JUnit4.class)
 public class NtpMessageTest {
 
   private static final int MIN_UNSIGNED_BYTE = 0;
@@ -305,10 +308,10 @@ public class NtpMessageTest {
     // Sub-second fractions are stored with fixed-point binary, which is lossy due to truncation:
     // the value will always be rounded down if it cannot be represented exactly.
     assertEquals(duration.getSeconds(), valueRead.getSeconds());
-    long delta = duration.getNano() - valueRead.getNano();
+    int delta = duration.getNano() - valueRead.getNano();
 
     // TODO Work out the correct value.
-    long allowedTruncationError = 20000;
+    int allowedTruncationError = 20000;
     assertTrue(
         "Expected=" + duration.getNano() + ", actual=" + valueRead.getNano(),
         delta >= 0 && delta <= allowedTruncationError);

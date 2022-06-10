@@ -51,8 +51,11 @@ import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 /** Unit tests for {@link SntpClientEngine}. */
+@RunWith(JUnit4.class)
 public class SntpClientEngineUnitTest {
 
   // From tcpdump (admittedly, an NTPv4 packet):
@@ -219,7 +222,7 @@ public class SntpClientEngineUnitTest {
 
     // Check for no randomization of nano-resolution transmit timestamp.
     Timestamp64 actualTime = Timestamp64.fromInstant(instantSource.instant());
-    assertEquals(actualTime, requestMessage.getTransmitTimestamp());
+    assertEquals(requestMessage.getTransmitTimestamp(), actualTime);
   }
 
   private static void assertDefaultRequestFields(NtpMessage ntpMessage) {

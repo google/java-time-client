@@ -39,6 +39,7 @@ public class TestEnvironmentUtils {
    * Returns the Java version when the test is running the Java SE variant of code. Throws {@link
    * AssertionError} when on Android.
    */
+  @SuppressWarnings("DoNotCallSuggester")
   public static int getJavaVersion() {
     throw new AssertionError("This is the Android variant");
   }

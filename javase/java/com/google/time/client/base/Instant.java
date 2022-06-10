@@ -70,6 +70,7 @@ public final class Instant implements Comparable<Instant> {
     return delegate.toEpochMilli();
   }
 
+  @SuppressWarnings("JavaInstantGetSecondsGetNano")
   public int getNano() {
     return delegate.getNano();
   }
