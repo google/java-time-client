@@ -6,4 +6,5 @@ android_library(
         "impl/*.java",
     ]),
     visibility = ["//visibility:public"],
+    deps = ["@maven//:androidx_annotation_annotation"],
 )

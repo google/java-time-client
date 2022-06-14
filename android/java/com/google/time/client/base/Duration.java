@@ -21,6 +21,8 @@ import static com.google.time.client.base.impl.DateTimeConstants.MILLISECONDS_PE
 import static com.google.time.client.base.impl.DateTimeConstants.NANOS_PER_MILLISECOND;
 import static com.google.time.client.base.impl.DateTimeConstants.NANOS_PER_SECOND;
 
+import android.os.Build;
+import androidx.annotation.RequiresApi;
 import com.google.time.client.base.impl.ExactMath;
 import com.google.time.client.base.impl.Objects;
 import java.math.BigDecimal;
@@ -46,6 +48,12 @@ public final class Duration implements Comparable<Duration> {
   public static Duration ofNanos(long nanos) {
     long seconds = nanos / NANOS_PER_SECOND;
     long nanosAdjustment = nanos % NANOS_PER_SECOND;
+    return ofSeconds(seconds, nanosAdjustment);
+  }
+
+  public static Duration ofMillis(long millis) {
+    long seconds = millis / MILLISECONDS_PER_SECOND;
+    long nanosAdjustment = (millis % MILLISECONDS_PER_SECOND) * NANOS_PER_MILLISECOND;
     return ofSeconds(seconds, nanosAdjustment);
   }
 
@@ -175,5 +183,25 @@ public final class Duration implements Comparable<Duration> {
   public String toString() {
     // TODO ISO format would be nicer.
     return "Duration{seconds=" + seconds + ", nanosOfSecond=" + nanosOfSecond + "}";
+  }
+
+  /**
+   * Converts a {@link java.time.Duration} to a {@link Duration}.
+   *
+   * <p>Interoperability with {@code java.time} classes for platforms that support it.
+   */
+  @RequiresApi(Build.VERSION_CODES.O)
+  public static Duration ofJavaTime(java.time.Duration duration) {
+    return Duration.ofNanos(duration.toNanos());
+  }
+
+  /**
+   * Converts a {@link Duration} to a {@link java.time.Duration}.
+   *
+   * <p>Interoperability with {@code java.time} classes for platforms that support it.
+   */
+  @RequiresApi(Build.VERSION_CODES.O)
+  public java.time.Duration toJavaTime() {
+    return java.time.Duration.ofNanos(toNanos());
   }
 }

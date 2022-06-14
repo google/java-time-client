@@ -101,4 +101,22 @@ public final class Instant implements Comparable<Instant> {
   public String toString() {
     return delegate.toString();
   }
+
+  /**
+   * Converts an {@link java.time.Instant} to an {@link Instant}.
+   *
+   * <p>Interoperability with {@code java.time} classes for platforms that support it.
+   */
+  public static Instant ofJavaTime(java.time.Instant javaTimeInstant) {
+    return Instant.ofEpochSecond(javaTimeInstant.getEpochSecond(), javaTimeInstant.getNano());
+  }
+
+  /**
+   * Converts an {@link Instant} to an {@link java.time.Instant}.
+   *
+   * <p>Interoperability with {@code java.time} classes for platforms that support it.
+   */
+  public java.time.Instant toJavaTime() {
+    return java.time.Instant.ofEpochSecond(getEpochSecond(), getNano());
+  }
 }

@@ -25,6 +25,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 
+import com.google.time.client.base.testing.TestEnvironmentUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -413,6 +414,27 @@ public class InstantTest {
 
     if (seconds < Instant.MAX.getEpochSecond()) {
       assertInequalityGreaterThan(Instant.ofEpochSecond(seconds + 1, 0), maxNano);
+    }
+  }
+
+  @Test
+  public void javaTimeInterop() {
+    long epochMilli = 1234567890L;
+    // Avoid linkage errors.
+    if (TestEnvironmentUtils.isThisJavaSe()
+        || TestEnvironmentUtils.getAndroidApiLevel() >= 26
+        || TestEnvironmentUtils.isThisRobolectric()) {
+      assertEquals(
+          java.time.Instant.ofEpochMilli(epochMilli),
+          Instant.ofEpochMilli(epochMilli).toJavaTime());
+      assertEquals(
+          Instant.ofEpochMilli(epochMilli),
+          Instant.ofJavaTime(java.time.Instant.ofEpochMilli(epochMilli)));
+    } else {
+      assertThrows(NoClassDefFoundError.class, () -> Instant.ofEpochMilli(epochMilli).toJavaTime());
+      assertThrows(
+          NoClassDefFoundError.class,
+          () -> Instant.ofJavaTime(java.time.Instant.ofEpochMilli(epochMilli)));
     }
   }
 

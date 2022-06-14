@@ -50,10 +50,26 @@ public final class TestEnvironmentUtils {
   }
 
   /**
+   * Returns the Android API level when the test is running the Android variant of code. Throws
+   * {@link AssertionError} when on Java SE.
+   */
+  public static int getAndroidApiLevel() {
+    throw new AssertionError("This is the Java SE variant");
+  }
+
+  /**
    * Throws {@link org.junit.AssumptionViolatedException} if running the Android variant of code
    * under robolectric.
    */
   public static void assumeNotRobolectric(String reason) {
     // This is the javase variant of this class, so by definition this assumption holds true.
+  }
+
+  /**
+   * Returns {@code true if running the Android variant of code under robolectric.
+   */
+  public static boolean isThisRobolectric() {
+    // This is the javase variant of this class, so by definition this is false.
+    return false;
   }
 }

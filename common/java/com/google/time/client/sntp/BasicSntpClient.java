@@ -27,10 +27,12 @@ import com.google.time.client.base.ServerAddress;
 import com.google.time.client.base.Ticker;
 import com.google.time.client.base.annotations.VisibleForTesting;
 import com.google.time.client.base.impl.Objects;
+import com.google.time.client.base.impl.PlatformRandom;
 import com.google.time.client.base.impl.SystemStreamLogger;
 import com.google.time.client.sntp.impl.SntpClientEngine;
 import com.google.time.client.sntp.impl.SntpConnector;
 import com.google.time.client.sntp.impl.SntpConnectorImpl;
+import java.util.Random;
 
 /**
  * A simple implementation of {@link SntpClient} that is configured with a single server name. The
@@ -81,6 +83,7 @@ public final class BasicSntpClient implements SntpClient {
    *   <li>clientInstantSource - {@link PlatformInstantSource}
    *   <li>clientTicker - {@link PlatformTicker}
    *   <li>network - {@link PlatformNetwork}
+   *   <li>random - {@link PlatformRandom}
    * </ul>
    *
    * <p>Other properties must be set explicitly.
@@ -94,6 +97,7 @@ public final class BasicSntpClient implements SntpClient {
     private Ticker clientTicker = PlatformTicker.instance();
     private Network network = PlatformNetwork.instance();
     private boolean clientDataMinimizationEnabled = true;
+    private Random random = PlatformRandom.getDefaultRandom();
 
     // Properties without defaults.
     private ClientConfig clientConfig;
@@ -138,6 +142,12 @@ public final class BasicSntpClient implements SntpClient {
       return this;
     }
 
+    /** Sets the {@link Random} to use. Its exact use depends on the protocol / other settings. */
+    public Builder setRandom(Random random) {
+      this.random = Objects.requireNonNull(random);
+      return this;
+    }
+
     /** Sets the {@link ClientConfig config} to use. */
     public Builder setClientConfig(ClientConfig clientConfig) {
       this.clientConfig = Objects.requireNonNull(clientConfig);
@@ -152,7 +162,7 @@ public final class BasicSntpClient implements SntpClient {
       SntpConnector sntpConnector =
           new SntpConnectorImpl(
               logger, network, clientInstantSource, clientTicker, listener, clientConfig);
-      SntpClientEngine engine = new SntpClientEngine(logger, sntpConnector);
+      SntpClientEngine engine = new SntpClientEngine(logger, sntpConnector, random);
       engine.setClientDataMinimizationEnabled(clientDataMinimizationEnabled);
       return new BasicSntpClient(engine, clientInstantSource);
     }

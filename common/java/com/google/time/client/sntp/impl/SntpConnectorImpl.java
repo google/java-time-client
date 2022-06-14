@@ -32,7 +32,6 @@ import com.google.time.client.sntp.SntpNetworkListener;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
-import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
@@ -167,7 +166,7 @@ public final class SntpConnectorImpl implements SntpConnector {
           // Capture T4 / [client]responseTimestamp according to the client's Ticker
           responseTimeTicks = clientTicker.ticks();
         }
-      } catch (SocketException e) {
+      } catch (IOException e) {
         // These indicate an inability to create or configure the outgoing socket.
         throw new NtpServerNotReachableException("Unable to create/configure UdpSocket", e);
       }

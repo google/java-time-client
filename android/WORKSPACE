@@ -1,7 +1,7 @@
 # Use the Android SDK pointed to by ${ANDROID_HOME}
 android_sdk_repository(
     name = "androidsdk",
-    api_level = 19,
+    api_level = 26,
     # This version is needed for dx, which is used by bazel android_ rules.
     build_tools_version = "30.0.3",
 )
@@ -38,6 +38,8 @@ maven_install(
         # Mockito
         "org.mockito:mockito-android:jar:3.0.0",
         "org.mockito:mockito-core:jar:3.0.0",
+        # Android annotation support
+        "androidx.annotation:annotation:aar:1.3.0",
         # Android test suppport
         "junit:junit:4.13.2",
         "androidx.test:core:aar:1.4.0",
