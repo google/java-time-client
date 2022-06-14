@@ -35,6 +35,10 @@ public final class Duration implements Comparable<Duration> {
     return new Duration(java.time.Duration.ofNanos(nanos));
   }
 
+  public static Duration ofMillis(long millis) {
+    return new Duration(java.time.Duration.ofMillis(millis));
+  }
+
   public static Duration ofSeconds(long seconds, long nanoAdjustment) {
     return new Duration(java.time.Duration.ofSeconds(seconds, nanoAdjustment));
   }
@@ -107,5 +111,23 @@ public final class Duration implements Comparable<Duration> {
   @Override
   public String toString() {
     return delegate.toString();
+  }
+
+  /**
+   * Converts a {@link java.time.Duration} to a {@link Duration}.
+   *
+   * <p>Interoperability with {@code java.time} classes for platforms that support it.
+   */
+  public static Duration ofJavaTime(java.time.Duration duration) {
+    return Duration.ofNanos(duration.toNanos());
+  }
+
+  /**
+   * Converts a {@link Duration} to a {@link java.time.Duration}.
+   *
+   * <p>Interoperability with {@code java.time} classes for platforms that support it.
+   */
+  public java.time.Duration toJavaTime() {
+    return java.time.Duration.ofNanos(toNanos());
   }
 }

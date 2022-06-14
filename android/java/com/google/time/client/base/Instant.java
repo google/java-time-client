@@ -21,6 +21,8 @@ import static com.google.time.client.base.impl.DateTimeConstants.MILLISECONDS_PE
 import static com.google.time.client.base.impl.DateTimeConstants.NANOS_PER_MILLISECOND;
 import static com.google.time.client.base.impl.DateTimeConstants.NANOS_PER_SECOND;
 
+import android.os.Build;
+import androidx.annotation.RequiresApi;
 import com.google.time.client.base.impl.ExactMath;
 import com.google.time.client.base.impl.Objects;
 
@@ -138,5 +140,25 @@ public final class Instant implements Comparable<Instant> {
       throw new DateTimeException("seconds is out of allowed range");
     }
     return seconds;
+  }
+
+  /**
+   * Converts an {@link java.time.Instant} to an {@link Instant}.
+   *
+   * <p>Interoperability with {@code java.time} classes for platforms that support it.
+   */
+  @RequiresApi(Build.VERSION_CODES.O)
+  public static Instant ofJavaTime(java.time.Instant javaTimeInstant) {
+    return Instant.ofEpochSecond(javaTimeInstant.getEpochSecond(), javaTimeInstant.getNano());
+  }
+
+  /**
+   * Converts an {@link Instant} to an {@link java.time.Instant}.
+   *
+   * <p>Interoperability with {@code java.time} classes for platforms that support it.
+   */
+  @RequiresApi(Build.VERSION_CODES.O)
+  public java.time.Instant toJavaTime() {
+    return java.time.Instant.ofEpochSecond(getEpochSecond(), getNano());
   }
 }

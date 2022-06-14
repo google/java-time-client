@@ -30,7 +30,7 @@ public interface Network {
 
   InetAddress[] getAllByName(String hostString) throws UnknownHostException;
 
-  UdpSocket createUdpSocket() throws SocketException;
+  UdpSocket createUdpSocket() throws IOException;
 
   /** A partial interface over {@link java.net.DatagramSocket} to make it easier to test with. */
   interface UdpSocket extends AutoCloseable {
