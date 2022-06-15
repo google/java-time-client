@@ -53,6 +53,7 @@ public final class TestEnvironmentUtils {
    * Returns the Android API level when the test is running the Android variant of code. Throws
    * {@link AssertionError} when on Java SE.
    */
+  @SuppressWarnings("DoNotCallSuggester")
   public static int getAndroidApiLevel() {
     throw new AssertionError("This is the Java SE variant");
   }
@@ -66,7 +67,7 @@ public final class TestEnvironmentUtils {
   }
 
   /**
-   * Returns {@code true if running the Android variant of code under robolectric.
+   * Returns {@code true} if running the Android variant of code under robolectric.
    */
   public static boolean isThisRobolectric() {
     // This is the javase variant of this class, so by definition this is false.
