@@ -190,6 +190,7 @@ public final class Duration implements Comparable<Duration> {
    *
    * <p>Interoperability with {@code java.time} classes for platforms that support it.
    */
+  @SuppressWarnings("AndroidJdkLibsChecker")
   @RequiresApi(Build.VERSION_CODES.O)
   public static Duration ofJavaTime(java.time.Duration duration) {
     return Duration.ofNanos(duration.toNanos());
@@ -200,6 +201,7 @@ public final class Duration implements Comparable<Duration> {
    *
    * <p>Interoperability with {@code java.time} classes for platforms that support it.
    */
+  @SuppressWarnings("AndroidJdkLibsChecker")
   @RequiresApi(Build.VERSION_CODES.O)
   public java.time.Duration toJavaTime() {
     return java.time.Duration.ofNanos(toNanos());
