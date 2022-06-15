@@ -104,7 +104,7 @@ final class SntpResultImpl extends SntpResult {
    * <p>This is not exposed as a public API as that would require also exposing {@link Timestamp64}.
    * Instead, see the {@link #getReferenceTimestampAsInstant} methods.
    */
-  /* @VisibleForTesting */
+  @VisibleForTesting
   Timestamp64 getReferenceTimestamp() {
     return response.getReferenceTimestamp();
   }
