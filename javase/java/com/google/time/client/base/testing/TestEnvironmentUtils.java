@@ -65,9 +65,7 @@ public final class TestEnvironmentUtils {
     // This is the javase variant of this class, so by definition this assumption holds true.
   }
 
-  /**
-   * Returns {@code true if running the Android variant of code under robolectric.
-   */
+  /** Returns {@code true} if running the Android variant of code under robolectric. */
   public static boolean isThisRobolectric() {
     // This is the javase variant of this class, so by definition this is false.
     return false;

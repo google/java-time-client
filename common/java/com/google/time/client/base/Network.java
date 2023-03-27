@@ -23,7 +23,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 
 /**
- * An abstraction over networking behavior to aid with testing and to enable deployers of
+ * An abstraction over basic networking behavior to aid with testing and to enable deployers of
  * network-based time sync clients to affect things like which network interface is used.
  */
 public interface Network {
