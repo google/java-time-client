@@ -16,6 +16,7 @@
 
 package com.google.time.client.sntp.testing;
 
+import com.google.time.client.sntp.impl.NtpHeader;
 import com.google.time.client.sntp.impl.NtpMessage;
 
 /** A fake NTP server logic that always returns a canned response. */
@@ -30,9 +31,14 @@ public final class ReplayingSntpServerEngine implements TestSntpServerEngine {
     numRequestsReceived++;
 
     // This is required for the response to be accepted by the client.
-    nextResponse.setOriginateTimestamp(request.getTransmitTimestamp());
+    NtpHeader nextResponseHeaderWithOriginateTimestamp =
+        nextResponse.getHeader().toBuilder()
+            .setOriginateTimestamp(request.getHeader().getOriginateTimestamp())
+            .build();
+    NtpMessage nextResponseWithOriginateTimestamp =
+        nextResponse.toBuilder().setHeader(nextResponseHeaderWithOriginateTimestamp).build();
 
-    return nextResponse;
+    return nextResponseWithOriginateTimestamp;
   }
 
   @Override

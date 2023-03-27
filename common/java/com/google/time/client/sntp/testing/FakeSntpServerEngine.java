@@ -22,9 +22,9 @@ import com.google.time.client.base.impl.Objects;
 import com.google.time.client.base.impl.PlatformRandom;
 import com.google.time.client.base.testing.Advanceable;
 import com.google.time.client.base.testing.FakeClocks;
+import com.google.time.client.sntp.impl.NtpHeader;
 import com.google.time.client.sntp.impl.NtpMessage;
 import com.google.time.client.sntp.impl.Timestamp64;
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,9 +37,9 @@ public final class FakeSntpServerEngine implements TestSntpServerEngine {
   private final List<NtpMessage> requestsReceived = new ArrayList<>();
   private final List<NtpMessage> responsesSent = new ArrayList<>();
   private final List<Advanceable> advanceables = new ArrayList<>();
-  private final NtpMessage responseTemplate = createDefaultResponseTemplate();
   private final FakeClocks.FakeInstantSource instantSource;
 
+  private NtpMessage responseTemplate = createDefaultResponseTemplate();
   private Duration processingDuration = Duration.ZERO;
   private int quirkMode;
 
@@ -63,32 +63,41 @@ public final class FakeSntpServerEngine implements TestSntpServerEngine {
     return responseTemplate;
   }
 
+  public void setResponseTemplate(NtpMessage responseTemplate) {
+    this.responseTemplate = Objects.requireNonNull(responseTemplate);
+  }
+
   @Override
   public NtpMessage processRequest(NtpMessage request) {
     requestsReceived.add(request);
+    final NtpHeader requestHeader = request.getHeader();
 
-    NtpMessage response = createResponse(responseTemplate, null, 0);
+    NtpHeader.Builder responseHeaderBuilder = responseTemplate.getHeader().toBuilder();
     if ((quirkMode & QUIRK_MODE_DO_NOT_MATCH_REQUEST_PROTOCOL_VERSION) == 0) {
-      response.setVersionNumber(request.getVersionNumber());
+      responseHeaderBuilder.setVersionNumber(requestHeader.getVersionNumber());
     }
 
     Instant receiveInstant = instantSource.instant();
-    response.setReceiveTimestamp(Timestamp64.fromInstant(receiveInstant));
+    responseHeaderBuilder.setReceiveTimestamp(Timestamp64.fromInstant(receiveInstant));
 
     simulateElapsedTime(processingDuration);
-    response.setTransmitTimestamp(Timestamp64.fromInstant(instantSource.getCurrentInstant()));
+    responseHeaderBuilder.setTransmitTimestamp(
+        Timestamp64.fromInstant(instantSource.getCurrentInstant()));
 
     Timestamp64 originateTimestamp;
     if ((quirkMode & QUIRK_MODE_NON_MATCHING_ORIGINATE_TIME) == 0) {
-      originateTimestamp = request.getTransmitTimestamp();
+      originateTimestamp = requestHeader.getTransmitTimestamp();
     } else {
       originateTimestamp =
-          request.getTransmitTimestamp().randomizeSubMillis(PlatformRandom.getDefaultRandom());
+          requestHeader
+              .getTransmitTimestamp()
+              .randomizeSubMillis(PlatformRandom.getDefaultRandom());
     }
-    response.setOriginateTimestamp(originateTimestamp);
+    responseHeaderBuilder.setOriginateTimestamp(originateTimestamp);
 
+    NtpMessage response =
+        responseTemplate.toBuilder().setHeader(responseHeaderBuilder.build()).build();
     responsesSent.add(response);
-
     return response;
   }
 
@@ -98,17 +107,14 @@ public final class FakeSntpServerEngine implements TestSntpServerEngine {
   }
 
   private static NtpMessage createDefaultResponseTemplate() {
-    NtpMessage responseTemplate = NtpMessage.createEmptyV3();
-    responseTemplate.setReferenceIdentifierAsString("TEST");
-    responseTemplate.setMode(NtpMessage.NTP_MODE_SERVER);
-    responseTemplate.setPrecisionExponent(-10);
-    responseTemplate.setPollIntervalExponent(3);
-    return responseTemplate;
-  }
-
-  private static NtpMessage createResponse(
-      NtpMessage responseTemplate, InetAddress serverAddress, int serverPort) {
-    return NtpMessage.fromBytesForTests(responseTemplate.toByteArray(), serverAddress, serverPort);
+    NtpHeader header =
+        NtpHeader.Builder.createEmptyV3()
+            .setReferenceIdentifierAsString("TEST")
+            .setMode(NtpHeader.NTP_MODE_SERVER)
+            .setPrecisionExponent(-10)
+            .setPollIntervalExponent(3)
+            .build();
+    return NtpMessage.create(header);
   }
 
   private void simulateElapsedTime(Duration elapsedTime) {

@@ -32,6 +32,7 @@ import com.google.time.client.sntp.SntpNetworkListener;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
@@ -188,8 +189,15 @@ public final class SntpConnectorImpl implements SntpConnector {
       }
 
       NtpMessage response = NtpMessage.fromDatagramPacket(responsePacket);
+      InetSocketAddress responseSocketAddress =
+          new InetSocketAddress(responsePacket.getAddress(), responsePacket.getPort());
       return new SntpSessionResult(
-          requestInstant, requestTimeTicks, responseTimeTicks, request, response);
+          requestInstant,
+          requestTimeTicks,
+          responseTimeTicks,
+          request,
+          responseSocketAddress,
+          response);
     }
 
     @Override

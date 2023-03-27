@@ -27,6 +27,7 @@ import com.google.time.client.base.impl.PlatformRandom;
 import com.google.time.client.sntp.InvalidNtpResponseException;
 import com.google.time.client.sntp.NtpServerNotReachableException;
 import com.google.time.client.sntp.SntpResult;
+import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -94,7 +95,7 @@ public class SntpClientEngine {
           if (logger.isLoggingFine()) {
             logger.fine(
                 "requestInstant(): Response from address="
-                    + sessionResult.response.getInetAddress()
+                    + sessionResult.serverSocketAddress
                     + " is valid: sntpResult="
                     + sntpResult);
           }
@@ -103,7 +104,7 @@ public class SntpClientEngine {
           if (logger.isLoggingFine()) {
             logger.fine(
                 "requestInstant(): Response from address="
-                    + sessionResult.response.getInetAddress()
+                    + sessionResult.serverSocketAddress
                     + " is invalid.",
                 e);
           }
@@ -127,8 +128,8 @@ public class SntpClientEngine {
   @VisibleForTesting
   static NtpMessage createRequest(
       boolean clientDataMinimization, Random random, InstantSource clientInstantSource) {
-    NtpMessage request = NtpMessage.createEmptyV3();
-    request.setMode(NtpMessage.NTP_MODE_CLIENT);
+    NtpHeader.Builder headerBuilder = NtpHeader.Builder.createEmptyV3();
+    headerBuilder.setMode(NtpHeader.NTP_MODE_CLIENT);
 
     // Since it doesn't really matter what we send here (the server shouldn't use it for anything
     // except round-tripping), the transmit timestamp can be different from the value actually
@@ -152,8 +153,8 @@ public class SntpClientEngine {
         requestTransmitTimestamp = requestTransmitTimestamp.randomizeSubMillis(random);
       }
     }
-    request.setTransmitTimestamp(requestTransmitTimestamp);
-    return request;
+    headerBuilder.setTransmitTimestamp(requestTransmitTimestamp);
+    return NtpMessage.create(headerBuilder.build());
   }
 
   /**
@@ -166,7 +167,9 @@ public class SntpClientEngine {
       throws InvalidNtpResponseException {
 
     NtpMessage request = sessionResult.request;
+    InetSocketAddress serverSocketAddress = sessionResult.serverSocketAddress;
     NtpMessage response = sessionResult.response;
+    NtpHeader responseHeader = response.getHeader();
 
     // Initial validation.
     validateServerResponse(request, response);
@@ -178,9 +181,9 @@ public class SntpClientEngine {
     // T1 / [client]requestTimestamp
     final Timestamp64 requestTimestamp = Timestamp64.fromInstant(requestInstant);
     // T2 / [server]receiveTimestamp
-    final Timestamp64 receiveTimestamp = response.getReceiveTimestamp();
+    final Timestamp64 receiveTimestamp = responseHeader.getReceiveTimestamp();
     // T3 / [server]transmitTimestamp
-    final Timestamp64 transmitTimestamp = response.getTransmitTimestamp();
+    final Timestamp64 transmitTimestamp = responseHeader.getTransmitTimestamp();
 
     // totalTransactionDuration is the elapsed time between the request being sent and the
     // response being received. The spec obtains it using T4 - T1, but we use the
@@ -236,6 +239,7 @@ public class SntpClientEngine {
 
     return new SntpResultImpl(
         request,
+        serverSocketAddress,
         response,
         roundTripDuration,
         totalTransactionDuration,
@@ -250,19 +254,19 @@ public class SntpClientEngine {
   static void validateServerResponse(NtpMessage request, NtpMessage response)
       throws InvalidNtpResponseException {
 
+    NtpHeader requestHeader = request.getHeader();
+    NtpHeader responseHeader = response.getHeader();
+
     // RFC 4330 / 5.  SNTP Client Operations: Suggested check 3.
     // T1 / [server]originateTimestamp should be the same as [client]requestTimestamp, because the
     // server should echo it back to us.
     // Do validation according to RFC: if the response originateTimestamp != transmitTimestamp
     // then perhaps this response is an attack.
-    final Timestamp64 requestTransmitTimestamp = request.getTransmitTimestamp();
-    final Timestamp64 originateTimestamp = response.getOriginateTimestamp();
+    final Timestamp64 requestTransmitTimestamp = requestHeader.getTransmitTimestamp();
+    final Timestamp64 originateTimestamp = responseHeader.getOriginateTimestamp();
     if (!requestTransmitTimestamp.equals(originateTimestamp)) {
       throw new InvalidNtpResponseException(
-          response.getInetAddress()
-              + ":"
-              + response.getPort()
-              + ": Received originateTimestamp="
+          "Received originateTimestamp="
               + originateTimestamp
               + " but expected "
               + requestTransmitTimestamp);
@@ -275,12 +279,12 @@ public class SntpClientEngine {
     // RFC 4330 / 5.  SNTP Client Operations: Suggested check 4. We do not support multicast here.
     // RFC 4330 / 4.  Message Format: In unicast and manycast modes, [...] the server sets it to 4
     //   (server) in the reply.
-    if (response.getMode() != NtpMessage.NTP_MODE_SERVER) {
-      throw new InvalidNtpResponseException("untrusted mode: " + response.getMode());
+    if (responseHeader.getMode() != NtpHeader.NTP_MODE_SERVER) {
+      throw new InvalidNtpResponseException("untrusted mode: " + responseHeader.getMode());
     }
-    int stratum = response.getStratum();
+    int stratum = responseHeader.getStratum();
     // RFC 4330 / 5.  SNTP Client Operations: Suggested check 4
-    if ((stratum == NtpMessage.NTP_STRATUM_DEATH)) {
+    if ((stratum == NtpHeader.NTP_STRATUM_DEATH)) {
       // RFC 4330 / 6. SNTP Server Operations: If the server is not
       //   synchronized, the Stratum field is set to zero, and the Reference
       //   Identifier field is set to an ASCII error identifier...
@@ -288,13 +292,13 @@ public class SntpClientEngine {
           "untrusted stratum: "
               + stratum
               + ", reference id="
-              + response.getReferenceIdentifierAsString()
+              + responseHeader.getReferenceIdentifierAsString()
               + "("
-              + Arrays.toString(response.getReferenceIdentifier())
+              + Arrays.toString(responseHeader.getReferenceIdentifier())
               + ")");
     }
     // RFC 4330 / 5.  SNTP Client Operations: Suggested check 4
-    if (response.getTransmitTimestamp().equals(Timestamp64.ZERO)) {
+    if (responseHeader.getTransmitTimestamp().equals(Timestamp64.ZERO)) {
       throw new InvalidNtpResponseException("zero transmit timestamp");
     }
 
@@ -305,16 +309,16 @@ public class SntpClientEngine {
     //   reference clock.
     // Checking this value is not suggested by the RFC, but it looks like it's an invalid /
     // unacceptable state.
-    if (response.getLeapIndicator() == NtpMessage.NTP_LEAP_NOSYNC) {
+    if (responseHeader.getLeapIndicator() == NtpHeader.NTP_LEAP_NOSYNC) {
       throw new InvalidNtpResponseException("Unsynchronized server");
     }
 
     // RFC 4330 / 5.  SNTP Client Operations: The table suggests the max is 15.
-    if (stratum > NtpMessage.NTP_STRATUM_MAX) {
+    if (stratum > NtpHeader.NTP_STRATUM_MAX) {
       throw new InvalidNtpResponseException("untrusted stratum: " + stratum);
     }
 
-    if (response.getReferenceTimestamp().equals(Timestamp64.ZERO)) {
+    if (responseHeader.getReferenceTimestamp().equals(Timestamp64.ZERO)) {
       throw new InvalidNtpResponseException("zero reference timestamp");
     }
   }

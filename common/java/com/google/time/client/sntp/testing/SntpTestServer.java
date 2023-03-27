@@ -57,7 +57,7 @@ final class SntpTestServer {
                 NtpMessage request = NtpMessage.fromDatagramPacket(requestPacket);
                 synchronized (lock) {
                   NtpMessage response = engine.processRequest(request);
-                  byte[] responseBytes = response.toByteArray();
+                  byte[] responseBytes = response.toBytes();
                   DatagramPacket responsePacket =
                       new DatagramPacket(
                           responseBytes,
