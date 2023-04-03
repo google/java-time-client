@@ -19,6 +19,7 @@ package com.google.time.client.base;
 import static com.google.time.client.base.NetworkOperationResult.TYPE_FAILURE;
 import static com.google.time.client.base.NetworkOperationResult.TYPE_SUCCESS;
 import static com.google.time.client.base.NetworkOperationResult.TYPE_TIME_ALLOWED_EXCEEDED;
+import static com.google.time.client.base.testing.MoreAsserts.assertEqualityMethods;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
@@ -104,19 +105,5 @@ public class NetworkOperationResultTest {
     assertNotEquals(
         NetworkOperationResult.timeAllowedExceeded(address1),
         NetworkOperationResult.timeAllowedExceeded(address2));
-  }
-
-  private static <T> void assertEqualityMethods(T one, T two) {
-    assertSelfEquality(one);
-    assertSelfEquality(two);
-
-    assertEquals(one, two);
-    assertEquals(two.hashCode(), one.hashCode());
-  }
-
-  @SuppressWarnings("SelfComparison")
-  private static <T> void assertSelfEquality(T obj) {
-    assertEquals(obj, obj);
-    assertEquals(obj.hashCode(), obj.hashCode());
   }
 }

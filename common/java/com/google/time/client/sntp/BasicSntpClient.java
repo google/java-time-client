@@ -24,43 +24,38 @@ import com.google.time.client.base.PlatformInstantSource;
 import com.google.time.client.base.PlatformNetwork;
 import com.google.time.client.base.PlatformTicker;
 import com.google.time.client.base.ServerAddress;
+import com.google.time.client.base.Supplier;
 import com.google.time.client.base.Ticker;
 import com.google.time.client.base.annotations.VisibleForTesting;
 import com.google.time.client.base.impl.Objects;
 import com.google.time.client.base.impl.PlatformRandom;
 import com.google.time.client.base.impl.SystemStreamLogger;
+import com.google.time.client.sntp.impl.NtpMessage;
 import com.google.time.client.sntp.impl.SntpClientEngine;
-import com.google.time.client.sntp.impl.SntpConnector;
-import com.google.time.client.sntp.impl.SntpConnectorImpl;
+import com.google.time.client.sntp.impl.SntpRequestFactory;
+import java.net.UnknownHostException;
 import java.util.Random;
 
 /**
  * A simple implementation of {@link SntpClient} that is configured with a single server name. The
- * server's name is resolved each time {@link #requestInstant()}, is called and if the server name
- * resolves to multiple IP addresses, each is tried sequentially until one request succeeds or the
- * IP addresses are exhausted.
+ * server's name is resolved each time {@link #executeQuery}, is called and if the server name
+ * resolves to multiple IP addresses, each is tried sequentially until one request succeeds, the
+ * time allowed is exceeded, or the IP addresses are exhausted.
  *
  * <p>The {@link Builder} class is used to configure and construct the object.
  */
 public final class BasicSntpClient implements SntpClient {
 
-  private final InstantSource clientInstantSource;
   private final SntpClientEngine engine;
 
   @VisibleForTesting
-  BasicSntpClient(SntpClientEngine engine, InstantSource clientInstantSource) {
+  BasicSntpClient(SntpClientEngine engine) {
     this.engine = Objects.requireNonNull(engine, "engine");
-    this.clientInstantSource = Objects.requireNonNull(clientInstantSource, "clientInstantSource");
-  }
-
-  /** Returns the client-side {@link InstantSource} in use. */
-  public InstantSource getClientInstantSource() {
-    return clientInstantSource;
   }
 
   @Override
-  public SntpResult requestInstant() throws NtpServerNotReachableException {
-    return engine.requestInstant(clientInstantSource);
+  public SntpQueryResult executeQuery(Duration timeAllowed) throws UnknownHostException {
+    return engine.executeQuery(timeAllowed);
   }
 
   /** SNTP client configuration */
@@ -78,7 +73,6 @@ public final class BasicSntpClient implements SntpClient {
    * <p>The following properties are defaulted:
    *
    * <ul>
-   *   <li>listener - {@link NoOpSntpNetworkListener}
    *   <li>logger - {@link SystemStreamLogger}
    *   <li>clientInstantSource - {@link PlatformInstantSource}
    *   <li>clientTicker - {@link PlatformTicker}
@@ -91,7 +85,6 @@ public final class BasicSntpClient implements SntpClient {
   public static final class Builder {
 
     // Properties with defaults.
-    private SntpNetworkListener listener = new NoOpSntpNetworkListener();
     private Logger logger = new SystemStreamLogger();
     private InstantSource clientInstantSource = PlatformInstantSource.instance();
     private Ticker clientTicker = PlatformTicker.instance();
@@ -101,12 +94,6 @@ public final class BasicSntpClient implements SntpClient {
 
     // Properties without defaults.
     private ClientConfig clientConfig;
-
-    /** Sets the {@link SntpNetworkListener listener} to use. */
-    public Builder setNetworkListener(SntpNetworkListener listener) {
-      this.listener = Objects.requireNonNull(listener);
-      return this;
-    }
 
     /** Sets the {@link Logger logger} to use. */
     public Builder setLogger(Logger logger) {
@@ -159,12 +146,15 @@ public final class BasicSntpClient implements SntpClient {
       // Check non-defaulted properties.
       Objects.requireNonNull(clientConfig, "config");
 
-      SntpConnector sntpConnector =
-          new SntpConnectorImpl(
-              logger, network, clientInstantSource, clientTicker, listener, clientConfig);
-      SntpClientEngine engine = new SntpClientEngine(logger, sntpConnector, random);
-      engine.setClientDataMinimizationEnabled(clientDataMinimizationEnabled);
-      return new BasicSntpClient(engine, clientInstantSource);
+      final int clientReportedVersion = 3;
+      Supplier<NtpMessage> requestSupplier =
+          new SntpRequestFactory(
+              clientInstantSource, random, clientReportedVersion, clientDataMinimizationEnabled);
+
+      SntpClientEngine engine =
+          SntpClientEngine.create(
+              logger, clientInstantSource, clientConfig, network, clientTicker, requestSupplier);
+      return new BasicSntpClient(engine);
     }
   }
 }

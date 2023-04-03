@@ -1,1 +1,0 @@
-../../../../../../../../common/javatests/com/google/time/client/sntp/impl/SntpConnectorImplTest.java

@@ -32,7 +32,7 @@ import com.google.time.client.base.impl.Objects;
  * comparisons between, and calculations using, ticks originating from different {@link Ticker}
  * (which may be using different epochs, have different resolutions, and so on).
  */
-public final class Ticks {
+public final class Ticks implements Comparable<Ticks> {
 
   private final Ticker originTicker;
   private final long value;
@@ -130,5 +130,16 @@ public final class Ticks {
   @Override
   public String toString() {
     return "Ticks{" + "originalTicker=" + originTicker + ", nanoTicks=" + value + '}';
+  }
+
+  @Override
+  public int compareTo(Ticks other) {
+    if (!Objects.equals(this.originTicker, other.originTicker)) {
+      // It's a very bad idea to compare Ticks with different Tickers, and we cannot compare tickers
+      // in a stable way. Throwing an exception is only broadly in line with the contract.
+      throw new ClassCastException(
+          "Ticks from different tickers are not comparable: this=" + this + ", other=" + other);
+    }
+    return Long.compare(this.value, other.value);
   }
 }

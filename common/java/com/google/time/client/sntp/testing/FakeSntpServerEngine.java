@@ -27,19 +27,24 @@ import com.google.time.client.sntp.impl.NtpMessage;
 import com.google.time.client.sntp.impl.Timestamp64;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 
 /** Fake NTP server logic that behaves like a real one with configurable quirks. */
 public final class FakeSntpServerEngine implements TestSntpServerEngine {
 
   public static final int QUIRK_MODE_NON_MATCHING_ORIGINATE_TIME = 0x1;
   public static final int QUIRK_MODE_DO_NOT_MATCH_REQUEST_PROTOCOL_VERSION = 0x2;
+  public static final int QUIRK_MODE_ZERO_TRANSMIT_TIMESTAMP = 0x4;
 
   private final List<NtpMessage> requestsReceived = new ArrayList<>();
   private final List<NtpMessage> responsesSent = new ArrayList<>();
   private final List<Advanceable> advanceables = new ArrayList<>();
   private final FakeClocks.FakeInstantSource instantSource;
 
-  private NtpMessage responseTemplate = createDefaultResponseTemplate();
+  private Vector<NtpMessage> responseTemplates = new Vector<>();
+  /** The template used after {@link #responseTemplates} is exhausted. */
+  private NtpMessage lastResponseTemplate = createDefaultResponseTemplate();
+
   private Duration processingDuration = Duration.ZERO;
   private int quirkMode;
 
@@ -59,16 +64,46 @@ public final class FakeSntpServerEngine implements TestSntpServerEngine {
     this.processingDuration = Objects.requireNonNull(processingDuration);
   }
 
-  public NtpMessage getResponseTemplate() {
-    return responseTemplate;
+  public void setResponseTemplate(int startInc, int endExcl, NtpMessage responseTemplate) {
+    if (startInc >= endExcl) {
+      throw new IllegalArgumentException("Bad range=[" + startInc + ", " + endExcl + ")");
+    }
+
+    if (responseTemplates.size() < endExcl) {
+      responseTemplates.setSize(endExcl);
+    }
+
+    for (int i = startInc; i < endExcl; i++) {
+      responseTemplates.set(i, responseTemplate);
+    }
   }
 
-  public void setResponseTemplate(NtpMessage responseTemplate) {
-    this.responseTemplate = Objects.requireNonNull(responseTemplate);
+  public NtpMessage getLastResponseTemplate() {
+    return lastResponseTemplate;
+  }
+
+  public void setLastResponseTemplate(NtpMessage lastResponseTemplate) {
+    this.lastResponseTemplate = Objects.requireNonNull(lastResponseTemplate);
   }
 
   @Override
   public NtpMessage processRequest(NtpMessage request) {
+    NtpMessage responseTemplate;
+    int templateIndex = requestsReceived.size();
+    if (templateIndex >= responseTemplates.size()) {
+      responseTemplate = lastResponseTemplate;
+    } else {
+      responseTemplate = responseTemplates.get(templateIndex);
+      if (responseTemplate == null) {
+        throw new IllegalStateException(
+            "No response template set for"
+                + " templateIndex="
+                + templateIndex
+                + ", templates="
+                + responseTemplates);
+      }
+    }
+
     requestsReceived.add(request);
     final NtpHeader requestHeader = request.getHeader();
 
@@ -81,8 +116,13 @@ public final class FakeSntpServerEngine implements TestSntpServerEngine {
     responseHeaderBuilder.setReceiveTimestamp(Timestamp64.fromInstant(receiveInstant));
 
     simulateElapsedTime(processingDuration);
-    responseHeaderBuilder.setTransmitTimestamp(
-        Timestamp64.fromInstant(instantSource.getCurrentInstant()));
+    Timestamp64 transmitTimestamp;
+    if ((quirkMode & QUIRK_MODE_ZERO_TRANSMIT_TIMESTAMP) == 0) {
+      transmitTimestamp = Timestamp64.fromInstant(instantSource.getCurrentInstant());
+    } else {
+      transmitTimestamp = Timestamp64.ZERO;
+    }
+    responseHeaderBuilder.setTransmitTimestamp(transmitTimestamp);
 
     Timestamp64 originateTimestamp;
     if ((quirkMode & QUIRK_MODE_NON_MATCHING_ORIGINATE_TIME) == 0) {
@@ -107,12 +147,17 @@ public final class FakeSntpServerEngine implements TestSntpServerEngine {
   }
 
   private static NtpMessage createDefaultResponseTemplate() {
+    // Zero would indicate the server has never synchronized, which would be broken. This value
+    // is arbitrary, just non-zero.
+    Timestamp64 validReferenceTimestamp = Timestamp64.fromInstant(Instant.ofEpochMilli(1234));
     NtpHeader header =
         NtpHeader.Builder.createEmptyV3()
+            .setStratum(1)
             .setReferenceIdentifierAsString("TEST")
             .setMode(NtpHeader.NTP_MODE_SERVER)
             .setPrecisionExponent(-10)
             .setPollIntervalExponent(3)
+            .setReferenceTimestamp(validReferenceTimestamp)
             .build();
     return NtpMessage.create(header);
   }

@@ -18,13 +18,15 @@ package com.google.time.client.sntp.tools;
 
 import com.google.time.client.base.Duration;
 import com.google.time.client.base.InstantSource;
+import com.google.time.client.base.PlatformInstantSource;
 import com.google.time.client.base.PlatformTicker;
 import com.google.time.client.base.ServerAddress;
 import com.google.time.client.base.Ticker;
 import com.google.time.client.base.impl.SystemStreamLogger;
 import com.google.time.client.sntp.BasicSntpClient;
 import com.google.time.client.sntp.BasicSntpClient.ClientConfig;
-import com.google.time.client.sntp.SntpResult;
+import com.google.time.client.sntp.SntpQueryResult;
+import com.google.time.client.sntp.SntpTimeSignal;
 
 /** A simple command / demo of the {@link BasicSntpClient}. */
 public final class SntpTool {
@@ -43,28 +45,35 @@ public final class SntpTool {
     ServerAddress serverAddress = parseServerAddress(args[0]);
     ClientConfig clientConfig = createConfig(serverAddress);
 
+    InstantSource clientInstantSource = PlatformInstantSource.instance();
     Ticker clientTicker = PlatformTicker.instance();
     BasicSntpClient client =
         new BasicSntpClient.Builder()
             .setClientConfig(clientConfig)
+            .setClientInstantSource(clientInstantSource)
             .setClientTicker(clientTicker)
             .setLogger(logger)
             .build();
-    SntpResult sntpResult = client.requestInstant();
+    SntpQueryResult sntpQueryResult = client.executeQuery(null);
 
     if (logger.isLoggingFine()) {
-      logger.fine("SntpResult:" + sntpResult);
+      logger.fine("SntpResult:" + sntpQueryResult);
     }
 
     System.out.println("Client ticker: " + clientTicker);
-    InstantSource clientInstantSource = client.getClientInstantSource();
     System.out.println("Client instant source: " + clientInstantSource);
 
-    System.out.println("Server instant: " + sntpResult.getResultInstant());
-    System.out.println("At ticks: " + sntpResult.getResultTicks());
     System.out.println("Current ticks: " + clientTicker.ticks());
-    System.out.println("Offset between client and server: " + sntpResult.getClientOffset());
     System.out.println("Client instant now: " + clientInstantSource.instant());
+
+    if (sntpQueryResult.getType() != SntpQueryResult.TYPE_SUCCESS) {
+      System.out.println("Result did not contain a time signal. Type=" + sntpQueryResult.getType());
+    } else {
+      SntpTimeSignal sntpTimeSignal = sntpQueryResult.getTimeSignal();
+      System.out.println("Server instant: " + sntpTimeSignal.getResultInstant());
+      System.out.println("At ticks: " + sntpTimeSignal.getResultTicks());
+      System.out.println("Offset between client and server: " + sntpTimeSignal.getClientOffset());
+    }
   }
 
   /** Returns the address for an NTP server. */

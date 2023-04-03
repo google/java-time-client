@@ -17,7 +17,7 @@
 package com.google.time.client.sntp;
 
 /** Thrown if a value contained in an NTP message is invalid. */
-public final class InvalidNtpValueException extends NtpException {
+public final class InvalidNtpValueException extends Exception {
 
   public InvalidNtpValueException(String message) {
     super(message);
