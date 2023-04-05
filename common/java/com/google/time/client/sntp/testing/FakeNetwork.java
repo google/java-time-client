@@ -82,7 +82,7 @@ public final class FakeNetwork implements Network {
   }
 
   public InetSocketAddress addServerIpAddress(String serverName) {
-    InetAddress ipAddress = createAddress(serverName, knownAddresses.size());
+    InetAddress ipAddress = createInetAddress(serverName, knownAddresses.size());
     knownAddresses.add(ipAddress);
 
     List<InetSocketAddress> socketAddresses = serverSocketAddresses.get(serverName);
@@ -144,6 +144,7 @@ public final class FakeNetwork implements Network {
     private boolean isClosed;
 
     private NtpMessage nextResponseMessage;
+    private SocketAddress nextResponseServerAddress;
 
     @Override
     public SocketAddress getLocalSocketAddress() {
@@ -174,8 +175,7 @@ public final class FakeNetwork implements Network {
 
       NtpMessage requestMessage = NtpMessage.fromDatagramPacket(packet);
       nextResponseMessage = serverEngine.processRequest(requestMessage);
-      nextResponseMessage.setInetAddress(packet.getAddress());
-      nextResponseMessage.setPort(packet.getPort());
+      nextResponseServerAddress = packet.getSocketAddress();
     }
 
     @Override
@@ -191,10 +191,9 @@ public final class FakeNetwork implements Network {
 
       simulateElapsedTime(FakeNetwork.this.networkPropagationTimeReceive);
 
-      byte[] bytes = nextResponseMessage.toByteArray();
+      byte[] bytes = nextResponseMessage.toBytes();
       packet.setData(bytes);
-      packet.setAddress(nextResponseMessage.getInetAddress());
-      packet.setPort(nextResponseMessage.getPort());
+      packet.setSocketAddress(nextResponseServerAddress);
     }
 
     @Override
@@ -220,7 +219,7 @@ public final class FakeNetwork implements Network {
     }
   }
 
-  private static InetAddress createAddress(String name, int n) {
+  private static InetAddress createInetAddress(String name, int n) {
     try {
       return Inet4Address.getByAddress(name, bytes(192, 168, 0, n));
     } catch (UnknownHostException e) {

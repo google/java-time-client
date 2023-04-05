@@ -20,6 +20,7 @@ import com.google.time.client.base.Instant;
 import com.google.time.client.base.Ticks;
 import com.google.time.client.base.annotations.VisibleForTesting;
 import com.google.time.client.base.impl.Objects;
+import java.net.InetSocketAddress;
 
 /**
  * A result struct for an SNTP interaction with an NTP server. It contains the request, response and
@@ -40,6 +41,9 @@ final class SntpSessionResult {
   /** The message sent to the NTP server. */
   final NtpMessage request;
 
+  /** The address that {@link #response} came from. */
+  final InetSocketAddress serverSocketAddress;
+
   /** The message received from the NTP server. */
   final NtpMessage response;
 
@@ -48,11 +52,13 @@ final class SntpSessionResult {
       Ticks requestTimeTicks,
       Ticks responseTimeTicks,
       NtpMessage request,
+      InetSocketAddress serverSocketAddress,
       NtpMessage response) {
     this.requestInstant = Objects.requireNonNull(requestInstant, "requestInstant");
     this.requestTimeTicks = Objects.requireNonNull(requestTimeTicks, "requestTimeTicks");
     this.responseTimeTicks = Objects.requireNonNull(responseTimeTicks, "responseTimeTicks");
     this.request = Objects.requireNonNull(request, "request");
+    this.serverSocketAddress = Objects.requireNonNull(serverSocketAddress, "serverSocketAddress");
     this.response = Objects.requireNonNull(response, "response");
   }
 
@@ -67,6 +73,8 @@ final class SntpSessionResult {
         + responseTimeTicks
         + ", request="
         + request
+        + ", serverSocketAddress="
+        + serverSocketAddress
         + ", response="
         + response
         + '}';

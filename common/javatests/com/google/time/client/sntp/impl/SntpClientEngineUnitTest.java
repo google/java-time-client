@@ -21,12 +21,11 @@ import static com.google.time.client.base.impl.DateTimeConstants.MILLISECONDS_PE
 import static com.google.time.client.base.impl.DateTimeConstants.NANOS_PER_MILLISECOND;
 import static com.google.time.client.base.testing.Bytes.bytes;
 import static com.google.time.client.base.testing.DateTimeUtils.utc;
-import static com.google.time.client.sntp.impl.NtpMessage.NTP_LEAP_NOSYNC;
-import static com.google.time.client.sntp.impl.NtpMessage.NTP_MODE_CLIENT;
-import static com.google.time.client.sntp.impl.NtpMessage.NTP_MODE_SERVER;
+import static com.google.time.client.sntp.impl.NtpHeader.NTP_LEAP_NOSYNC;
+import static com.google.time.client.sntp.impl.NtpHeader.NTP_MODE_CLIENT;
+import static com.google.time.client.sntp.impl.NtpHeader.NTP_MODE_SERVER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -44,10 +43,10 @@ import com.google.time.client.sntp.InvalidNtpResponseException;
 import com.google.time.client.sntp.SntpResult;
 import com.google.time.client.sntp.testing.FakeNetwork;
 import com.google.time.client.sntp.testing.FakeSntpServerEngine;
-import com.google.time.client.sntp.testing.TestNtpMessage;
 import com.google.time.client.sntp.testing.TestSntpServerWithNetwork;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
@@ -73,29 +72,27 @@ public class SntpClientEngineUnitTest {
   //
   //     Originator - Receive Timestamp:  +0.004684958
   //     Originator - Transmit Timestamp: +0.004684958
-  private static final TestNtpMessage LATE_ERA_RESPONSE;
-
-  static {
-    NtpMessage message = NtpMessage.createEmptyV3();
-    message.setLeapIndicator(0);
-    message.setMode(NTP_MODE_SERVER);
-    message.setStratum(2);
-    message.setPollIntervalExponent(6);
-    message.setPrecisionExponent(-20);
-    message.setRootDelayDuration(Duration.ofNanos(5447000));
-    message.setRootDispersionDuration(Duration.ofNanos(2716000));
-    message.setReferenceIdentifier(bytes(221, 253, 71, 41));
-    message.setReferenceTimestamp(Timestamp64.fromString("d9ca9451.820a5000"));
-    message.setOriginateTimestamp(Timestamp64.fromString("d9ca9451.938a3771"));
-    message.setReceiveTimestamp(Timestamp64.fromString("d9ca9451.94bd3fff"));
-    message.setTransmitTimestamp(Timestamp64.fromString("d9ca9451.94bd4001"));
-    LATE_ERA_RESPONSE = TestNtpMessage.createReadonlyCopy(message);
-  }
+  private static final NtpMessage LATE_ERA_RESPONSE =
+      NtpMessage.create(
+          NtpHeader.Builder.createEmptyV3()
+              .setLeapIndicator(0)
+              .setMode(NTP_MODE_SERVER)
+              .setStratum(2)
+              .setPollIntervalExponent(6)
+              .setPrecisionExponent(-20)
+              .setRootDelayDuration(Duration.ofNanos(5447000))
+              .setRootDispersionDuration(Duration.ofNanos(2716000))
+              .setReferenceIdentifier(bytes(221, 253, 71, 41))
+              .setReferenceTimestamp(Timestamp64.fromString("d9ca9451.820a5000"))
+              .setOriginateTimestamp(Timestamp64.fromString("d9ca9451.938a3771"))
+              .setReceiveTimestamp(Timestamp64.fromString("d9ca9451.94bd3fff"))
+              .setTransmitTimestamp(Timestamp64.fromString("d9ca9451.94bd4001"))
+              .build());
 
   private static final Timestamp64 LATE_ERA_RECEIVE_TIMESTAMP =
-      LATE_ERA_RESPONSE.getReceiveTimestamp();
+      LATE_ERA_RESPONSE.getHeader().getReceiveTimestamp();
   private static final Timestamp64 LATE_ERA_TRANSMIT_TIMESTAMP =
-      LATE_ERA_RESPONSE.getTransmitTimestamp();
+      LATE_ERA_RESPONSE.getHeader().getTransmitTimestamp();
   /** This is the actual UTC time in the server if it is in ERA0 */
   private static final Instant LATE_ERA0_SERVER_INSTANT =
       calculateIdealServerTime(LATE_ERA_RECEIVE_TIMESTAMP, LATE_ERA_TRANSMIT_TIMESTAMP, 0);
@@ -105,7 +102,7 @@ public class SntpClientEngineUnitTest {
    * when interpreted as an ERA0 timestamp.
    */
   private static final Instant LATE_ERA0_REQUEST_INSTANT =
-      LATE_ERA_RESPONSE.getOriginateTimestamp().toInstant(0);
+      LATE_ERA_RESPONSE.getHeader().getOriginateTimestamp().toInstant(0);
 
   // A tweaked version of the ERA0 response to represent an ERA 1 response.
   //
@@ -122,31 +119,29 @@ public class SntpClientEngineUnitTest {
   //
   //     Originator - Receive Timestamp:  +0.004684958
   //     Originator - Transmit Timestamp: +0.004684958
-  private static final TestNtpMessage EARLY_ERA_RESPONSE;
-
-  static {
-    NtpMessage message = NtpMessage.createEmptyV3();
-    message.setLeapIndicator(0);
-    message.setMode(NTP_MODE_SERVER);
-    message.setStratum(2);
-    message.setPollIntervalExponent(6);
-    message.setPrecisionExponent(-20);
-    message.setRootDelayDuration(Duration.ofNanos(5447000));
-    message.setRootDispersionDuration(Duration.ofNanos(2716000));
-    message.setReferenceIdentifier(bytes(221, 253, 71, 41));
-    message.setReferenceTimestamp(Timestamp64.fromString("1db2d246.820a5000"));
-    message.setOriginateTimestamp(Timestamp64.fromString("1db2d251.938a3771"));
-    message.setReceiveTimestamp(Timestamp64.fromString("1db2d251.94bd3fff"));
-    message.setTransmitTimestamp(Timestamp64.fromString("1db2d251.94bd4001"));
-    EARLY_ERA_RESPONSE = TestNtpMessage.createReadonlyCopy(message);
-  }
+  private static final NtpMessage EARLY_ERA_RESPONSE =
+      NtpMessage.create(
+          NtpHeader.Builder.createEmptyV3()
+              .setLeapIndicator(0)
+              .setMode(NTP_MODE_SERVER)
+              .setStratum(2)
+              .setPollIntervalExponent(6)
+              .setPrecisionExponent(-20)
+              .setRootDelayDuration(Duration.ofNanos(5447000))
+              .setRootDispersionDuration(Duration.ofNanos(2716000))
+              .setReferenceIdentifier(bytes(221, 253, 71, 41))
+              .setReferenceTimestamp(Timestamp64.fromString("1db2d246.820a5000"))
+              .setOriginateTimestamp(Timestamp64.fromString("1db2d251.938a3771"))
+              .setReceiveTimestamp(Timestamp64.fromString("1db2d251.94bd3fff"))
+              .setTransmitTimestamp(Timestamp64.fromString("1db2d251.94bd4001"))
+              .build());
 
   /** This is the actual UTC time in the server if it is in ERA0 */
   private static final Timestamp64 EARLY_ERA_RECEIVE_TIMESTAMP =
-      EARLY_ERA_RESPONSE.getReceiveTimestamp();
+      EARLY_ERA_RESPONSE.getHeader().getReceiveTimestamp();
 
   private static final Timestamp64 EARLY_ERA_TRANSMIT_TIMESTAMP =
-      EARLY_ERA_RESPONSE.getTransmitTimestamp();
+      EARLY_ERA_RESPONSE.getHeader().getTransmitTimestamp();
   /** This is the actual UTC time in the server if it is in ERA0 */
   private static final Instant EARLY_ERA1_SERVER_INSTANT =
       calculateIdealServerTime(EARLY_ERA_RECEIVE_TIMESTAMP, EARLY_ERA_TRANSMIT_TIMESTAMP, 1);
@@ -156,7 +151,7 @@ public class SntpClientEngineUnitTest {
    * when interpreted as an ERA1 timestamp.
    */
   private static final Instant EARLY_ERA1_REQUEST_INSTANT =
-      EARLY_ERA_RESPONSE.getOriginateTimestamp().toInstant(1);
+      EARLY_ERA_RESPONSE.getHeader().getOriginateTimestamp().toInstant(1);
 
   @Test
   public void createRequest_clientDataMinimization() {
@@ -171,13 +166,13 @@ public class SntpClientEngineUnitTest {
     assertDefaultRequestFields(requestMessage);
 
     // These are the important properties.
-    assertEquals(NtpMessage.NTP_MODE_CLIENT, requestMessage.getMode());
-    assertEquals(3, requestMessage.getVersionNumber());
+    assertEquals(NTP_MODE_CLIENT, requestMessage.getHeader().getMode());
+    assertEquals(3, requestMessage.getHeader().getVersionNumber());
 
     // Check for randomization of the transmit timestamp.
     Timestamp64 expectedTransmitTimestamp =
         Timestamp64.fromComponents(random.nextInt() & 0xFFFF_FFFFL, random.nextInt());
-    assertEquals(expectedTransmitTimestamp, requestMessage.getTransmitTimestamp());
+    assertEquals(expectedTransmitTimestamp, requestMessage.getHeader().getTransmitTimestamp());
   }
 
   @Test
@@ -193,14 +188,14 @@ public class SntpClientEngineUnitTest {
     assertDefaultRequestFields(requestMessage);
 
     // These are the important properties.
-    assertEquals(NtpMessage.NTP_MODE_CLIENT, requestMessage.getMode());
-    assertEquals(3, requestMessage.getVersionNumber());
+    assertEquals(NTP_MODE_CLIENT, requestMessage.getHeader().getMode());
+    assertEquals(3, requestMessage.getHeader().getVersionNumber());
 
     // Check for randomization of millis-resolution transmit timestamp.
     Timestamp64 actualTime = Timestamp64.fromInstant(instantSource.instant());
     Timestamp64 expectedTransmitTimestamp = actualTime.randomizeSubMillis(random);
     assertNotEquals(actualTime, expectedTransmitTimestamp);
-    assertEquals(expectedTransmitTimestamp, requestMessage.getTransmitTimestamp());
+    assertEquals(expectedTransmitTimestamp, requestMessage.getHeader().getTransmitTimestamp());
   }
 
   @Test
@@ -217,26 +212,25 @@ public class SntpClientEngineUnitTest {
     assertDefaultRequestFields(requestMessage);
 
     // These are the important properties.
-    assertEquals(NtpMessage.NTP_MODE_CLIENT, requestMessage.getMode());
-    assertEquals(3, requestMessage.getVersionNumber());
+    NtpHeader requestHeader = requestMessage.getHeader();
+    assertEquals(NTP_MODE_CLIENT, requestHeader.getMode());
+    assertEquals(3, requestHeader.getVersionNumber());
 
     // Check for no randomization of nano-resolution transmit timestamp.
     Timestamp64 actualTime = Timestamp64.fromInstant(instantSource.instant());
-    assertEquals(requestMessage.getTransmitTimestamp(), actualTime);
+    assertEquals(requestHeader.getTransmitTimestamp(), actualTime);
   }
 
   private static void assertDefaultRequestFields(NtpMessage ntpMessage) {
-    // These are only used on responses.
-    assertNull(ntpMessage.getInetAddress());
-    assertNull(ntpMessage.getPort());
-    assertEquals(0, ntpMessage.getLeapIndicator());
-    assertEquals(0, ntpMessage.getPrecisionExponent());
-    assertEquals(Duration.ZERO, ntpMessage.getRootDelayDuration());
-    assertEquals(Duration.ZERO, ntpMessage.getRootDispersionDuration());
-    assertEquals("", ntpMessage.getReferenceIdentifierAsString());
-    assertEquals(Timestamp64.ZERO, ntpMessage.getReferenceTimestamp());
-    assertEquals(Timestamp64.ZERO, ntpMessage.getOriginateTimestamp());
-    assertEquals(Timestamp64.ZERO, ntpMessage.getReceiveTimestamp());
+    NtpHeader header = ntpMessage.getHeader();
+    assertEquals(0, header.getLeapIndicator());
+    assertEquals(0, header.getPrecisionExponent());
+    assertEquals(Duration.ZERO, header.getRootDelayDuration());
+    assertEquals(Duration.ZERO, header.getRootDispersionDuration());
+    assertEquals("", header.getReferenceIdentifierAsString());
+    assertEquals(Timestamp64.ZERO, header.getReferenceTimestamp());
+    assertEquals(Timestamp64.ZERO, header.getOriginateTimestamp());
+    assertEquals(Timestamp64.ZERO, header.getReceiveTimestamp());
   }
 
   /*
@@ -315,43 +309,52 @@ public class SntpClientEngineUnitTest {
 
     Timestamp64 requestTimestamp = Timestamp64.fromString("e4dc720c.4c0064aa");
 
-    NtpMessage request = NtpMessage.createEmptyV3();
-    request.setTransmitTimestamp(requestTimestamp);
+    NtpHeader.Builder requestHeaderBuilder = NtpHeader.Builder.createEmptyV3();
+    requestHeaderBuilder.setTransmitTimestamp(requestTimestamp);
 
     Instant requestInstant = requestTimestamp.toInstant(0);
     Ticks requestTimeTicks = Ticks.fromTickerValue(ticker, 296881000);
     Ticks responseTimeTicks = Ticks.fromTickerValue(ticker, 308432730);
+    NtpMessage request = NtpMessage.create(requestHeaderBuilder.build());
 
-    NtpMessage response = NtpMessage.createEmptyV3();
-    response.setInetAddress(Inet4Address.getByAddress(bytes(216, 239, 35, 12)));
-    response.setPort(123);
-    response.setVersionNumber(4);
-    response.setMode(NTP_MODE_SERVER);
-    response.setLeapIndicator(0);
-    response.setStratum(1);
-    response.setReferenceIdentifierAsString("GOOG");
-    response.setPollIntervalExponent(8);
-    response.setPrecisionExponent(-20);
-    response.setRootDelay(bytes(0, 0, 0, 0));
-    response.setRootDispersion(bytes(0, 0, 0, 7));
-    response.setOriginateTimestamp(requestTimestamp);
-    response.setTransmitTimestamp(Timestamp64.fromString("e4dc720c.4d4fc9ee"));
-    response.setReceiveTimestamp(Timestamp64.fromString("e4dc720c.4d4fc9ec"));
-    response.setReferenceTimestamp(Timestamp64.fromString("e4dc720c.4d4fc9eb"));
+    NtpHeader.Builder responseHeaderBuilder = NtpHeader.Builder.createEmptyV3();
+    responseHeaderBuilder.setVersionNumber(4);
+    responseHeaderBuilder.setMode(NTP_MODE_SERVER);
+    responseHeaderBuilder.setLeapIndicator(0);
+    responseHeaderBuilder.setStratum(1);
+    responseHeaderBuilder.setReferenceIdentifierAsString("GOOG");
+    responseHeaderBuilder.setPollIntervalExponent(8);
+    responseHeaderBuilder.setPrecisionExponent(-20);
+    responseHeaderBuilder.setRootDelay(bytes(0, 0, 0, 0));
+    responseHeaderBuilder.setRootDispersion(bytes(0, 0, 0, 7));
+    responseHeaderBuilder.setOriginateTimestamp(requestTimestamp);
+    responseHeaderBuilder.setTransmitTimestamp(Timestamp64.fromString("e4dc720c.4d4fc9ee"));
+    responseHeaderBuilder.setReceiveTimestamp(Timestamp64.fromString("e4dc720c.4d4fc9ec"));
+    responseHeaderBuilder.setReferenceTimestamp(Timestamp64.fromString("e4dc720c.4d4fc9eb"));
+    NtpHeader responseHeader = responseHeaderBuilder.build();
+    NtpMessage response = NtpMessage.create(responseHeader);
+
+    InetSocketAddress serverSocketAddress = createSocketAddress();
 
     SntpSessionResult sessionResult =
         new SntpSessionResult(
-            requestInstant, requestTimeTicks, responseTimeTicks, request, response);
+            requestInstant,
+            requestTimeTicks,
+            responseTimeTicks,
+            request,
+            serverSocketAddress,
+            response);
     SntpResultImpl sntpResult =
         SntpClientEngine.processResponse(fakeClocks.getFakeInstantSource(), sessionResult);
 
-    assertEquals(response.getInetAddress(), sntpResult.getServerInetAddress());
+    assertEquals(serverSocketAddress.getAddress(), sntpResult.getServerInetAddress());
     // offset_calculation: LOGTOD(rpkt->precision): 0.000001
     // sntp rootdelay: 0.000000
     // sntp rootdisp: 0.000107
-    assertEquals(response.getPrecisionExponent(), sntpResult.getPrecisionExponent(), 0);
-    assertEquals(response.getRootDelayDuration(), sntpResult.getRootDelayDuration());
-    assertEquals(response.getRootDispersionDuration(), sntpResult.getRootDispersionDuration());
+    assertEquals(responseHeader.getPrecisionExponent(), sntpResult.getPrecisionExponent(), 0);
+    assertEquals(responseHeader.getRootDelayDuration(), sntpResult.getRootDelayDuration());
+    assertEquals(
+        responseHeader.getRootDispersionDuration(), sntpResult.getRootDispersionDuration());
 
     // 2021-09-03 11:06:04.308433 (+0000) -0.000658 +/- 0.000561 216.239.35.12 s1 no-leap
     Instant expectedResponseTime =
@@ -372,19 +375,23 @@ public class SntpClientEngineUnitTest {
     Ticks requestTimeTicks = fakeClocks.getFakeTicker().ticks();
     Ticks responseTimeTicks = fakeClocks.getFakeTicker().ticks();
 
-    NtpMessage request = NtpMessage.createEmptyV3();
-    request.setTransmitTimestamp(LATE_ERA_RESPONSE.getOriginateTimestamp());
+    NtpHeader.Builder requestHeaderBuilder = NtpHeader.Builder.createEmptyV3();
+    requestHeaderBuilder.setTransmitTimestamp(
+        LATE_ERA_RESPONSE.getHeader().getOriginateTimestamp());
+    NtpMessage request = NtpMessage.create(requestHeaderBuilder.build());
 
-    NtpMessage responseMessage = LATE_ERA_RESPONSE.toMutableCopy();
+    InetSocketAddress serverSocketAddress = createSocketAddress();
+    NtpHeader.Builder responseMessageBuilder = LATE_ERA_RESPONSE.getHeader().toBuilder();
     for (int i = 0; i <= 7; i++) {
-      responseMessage.setMode(i);
+      responseMessageBuilder.setMode(i);
       SntpSessionResult sessionResult =
           new SntpSessionResult(
               LATE_ERA0_REQUEST_INSTANT,
               requestTimeTicks,
               responseTimeTicks,
               request,
-              responseMessage);
+              serverSocketAddress,
+              NtpMessage.create(responseMessageBuilder.build()));
       if (i == NTP_MODE_SERVER) {
         SntpClientEngine.processResponse(fakeClocks.getFakeInstantSource(), sessionResult);
       } else {
@@ -404,11 +411,15 @@ public class SntpClientEngineUnitTest {
     Ticks responseTimeTicks = fakeClocks.getFakeTicker().ticks();
 
     // Cause the request / response to disagree on the field that is expected to agree.
-    NtpMessage request = NtpMessage.createEmptyV3();
-    request.setTransmitTimestamp(LATE_ERA_RESPONSE.getReferenceTimestamp());
+    NtpHeader.Builder requestHeaderBuilder = NtpHeader.Builder.createEmptyV3();
+    requestHeaderBuilder.setTransmitTimestamp(
+        LATE_ERA_RESPONSE.getHeader().getReferenceTimestamp());
+    NtpMessage request = NtpMessage.create(requestHeaderBuilder.build());
 
-    NtpMessage responseMessage = LATE_ERA_RESPONSE.toMutableCopy();
-    responseMessage.setOriginateTimestamp(Timestamp64.ZERO);
+    NtpHeader.Builder responseHeaderBuilder = LATE_ERA_RESPONSE.getHeader().toBuilder();
+    responseHeaderBuilder.setOriginateTimestamp(Timestamp64.ZERO);
+    InetSocketAddress serverSocketAddress = createSocketAddress();
+    NtpMessage response = NtpMessage.create(responseHeaderBuilder.build());
 
     SntpSessionResult sessionResult =
         new SntpSessionResult(
@@ -416,7 +427,8 @@ public class SntpClientEngineUnitTest {
             requestTimeTicks,
             responseTimeTicks,
             request,
-            responseMessage);
+            serverSocketAddress,
+            response);
     assertThrows(
         InvalidNtpResponseException.class,
         () -> SntpClientEngine.processResponse(fakeClocks.getFakeInstantSource(), sessionResult));
@@ -489,90 +501,104 @@ public class SntpClientEngineUnitTest {
 
   @Test
   public void validateServerResponse_badResponseStratum() throws Exception {
-    NtpMessage request = createValidRequest();
-    NtpMessage response = createValidResponse();
-    SntpClientEngine.validateServerResponse(request, response);
+    NtpMessage validRequest = createValidRequest();
+    NtpMessage validResponse = createValidResponse();
+    SntpClientEngine.validateServerResponse(validRequest, validResponse);
 
-    response.setStratum(0);
-
-    assertThrows(
-        InvalidNtpResponseException.class,
-        () -> SntpClientEngine.validateServerResponse(request, response));
-
-    response.setStratum(16);
+    NtpMessage stratum0Response =
+        NtpMessage.create(validResponse.getHeader().toBuilder().setStratum(0).build());
 
     assertThrows(
         InvalidNtpResponseException.class,
-        () -> SntpClientEngine.validateServerResponse(request, response));
+        () -> SntpClientEngine.validateServerResponse(validRequest, stratum0Response));
+
+    NtpMessage stratum16Response =
+        NtpMessage.create(validResponse.getHeader().toBuilder().setStratum(16).build());
+
+    assertThrows(
+        InvalidNtpResponseException.class,
+        () -> SntpClientEngine.validateServerResponse(validRequest, stratum16Response));
   }
 
   @Test
   public void validateServerResponse_badResponseMode() throws Exception {
-    NtpMessage request = createValidRequest();
-    NtpMessage response = createValidResponse();
-    SntpClientEngine.validateServerResponse(request, response);
+    NtpMessage validRequest = createValidRequest();
+    NtpMessage validResponse = createValidResponse();
+    SntpClientEngine.validateServerResponse(validRequest, validResponse);
 
-    response.setMode(NTP_MODE_CLIENT);
+    NtpMessage clientModeResponse =
+        NtpMessage.create(validResponse.getHeader().toBuilder().setMode(NTP_MODE_CLIENT).build());
 
     assertThrows(
         InvalidNtpResponseException.class,
-        () -> SntpClientEngine.validateServerResponse(request, response));
+        () -> SntpClientEngine.validateServerResponse(validRequest, clientModeResponse));
   }
 
   @Test
   public void validateServerResponse_zeroTransmitTimestamp() throws Exception {
-    NtpMessage request = createValidRequest();
-    NtpMessage response = createValidResponse();
-    SntpClientEngine.validateServerResponse(request, response);
+    NtpMessage validRequest = createValidRequest();
+    NtpMessage validResponse = createValidResponse();
+    SntpClientEngine.validateServerResponse(validRequest, validResponse);
 
-    response.setTransmitTimestamp(Timestamp64.ZERO);
+    NtpMessage zeroTransmitTimestampResponse =
+        NtpMessage.create(
+            validResponse.getHeader().toBuilder().setTransmitTimestamp(Timestamp64.ZERO).build());
 
     assertThrows(
         InvalidNtpResponseException.class,
-        () -> SntpClientEngine.validateServerResponse(request, response));
+        () -> SntpClientEngine.validateServerResponse(validRequest, zeroTransmitTimestampResponse));
   }
 
   @Test
   public void validateServerResponse_zeroReferenceTimestamp() throws Exception {
-    NtpMessage request = createValidRequest();
-    NtpMessage response = createValidResponse();
-    SntpClientEngine.validateServerResponse(request, response);
+    NtpMessage validRequest = createValidRequest();
+    NtpMessage validResponse = createValidResponse();
+    SntpClientEngine.validateServerResponse(validRequest, validResponse);
 
-    response.setReferenceTimestamp(Timestamp64.ZERO);
+    NtpMessage zeroReferenceTimestampResponse =
+        NtpMessage.create(
+            validResponse.getHeader().toBuilder().setReferenceTimestamp(Timestamp64.ZERO).build());
 
     assertThrows(
         InvalidNtpResponseException.class,
-        () -> SntpClientEngine.validateServerResponse(request, response));
+        () ->
+            SntpClientEngine.validateServerResponse(validRequest, zeroReferenceTimestampResponse));
   }
 
   @Test
   public void validateServerResponse_badLeapIndicator() throws Exception {
-    NtpMessage request = createValidRequest();
-    NtpMessage response = createValidResponse();
-    SntpClientEngine.validateServerResponse(request, response);
+    NtpMessage validRequest = createValidRequest();
+    NtpMessage validResponse = createValidResponse();
+    SntpClientEngine.validateServerResponse(validRequest, validResponse);
 
-    response.setLeapIndicator(NTP_LEAP_NOSYNC);
+    NtpMessage noSyncLeapIndicatorResponse =
+        NtpMessage.create(
+            validResponse.getHeader().toBuilder().setLeapIndicator(NTP_LEAP_NOSYNC).build());
 
     assertThrows(
         InvalidNtpResponseException.class,
-        () -> SntpClientEngine.validateServerResponse(request, response));
+        () -> SntpClientEngine.validateServerResponse(validRequest, noSyncLeapIndicatorResponse));
   }
 
   private static NtpMessage createValidRequest() {
-    NtpMessage request = NtpMessage.createEmptyV3();
-    request.setMode(NTP_MODE_CLIENT);
-    request.setTransmitTimestamp(LATE_ERA_RESPONSE.getOriginateTimestamp());
-    return request;
+    NtpHeader.Builder requestHeaderBuilder = NtpHeader.Builder.createEmptyV3();
+    requestHeaderBuilder.setMode(NTP_MODE_CLIENT);
+    requestHeaderBuilder.setTransmitTimestamp(
+        LATE_ERA_RESPONSE.getHeader().getOriginateTimestamp());
+    return NtpMessage.create(requestHeaderBuilder.build());
   }
 
   private static NtpMessage createValidResponse() {
-    NtpMessage response = LATE_ERA_RESPONSE.toMutableCopy();
-    response.setMode(NTP_MODE_SERVER);
-    response.setStratum(1);
-    response.setOriginateTimestamp(LATE_ERA_RESPONSE.getOriginateTimestamp());
-    response.setTransmitTimestamp(LATE_ERA_RESPONSE.getTransmitTimestamp());
-    response.setReferenceTimestamp(LATE_ERA_RESPONSE.getReferenceTimestamp());
-    return response;
+    NtpHeader.Builder responseHeaderBuilder = LATE_ERA_RESPONSE.getHeader().toBuilder();
+    responseHeaderBuilder.setMode(NTP_MODE_SERVER);
+    responseHeaderBuilder.setStratum(1);
+    responseHeaderBuilder.setOriginateTimestamp(
+        LATE_ERA_RESPONSE.getHeader().getOriginateTimestamp());
+    responseHeaderBuilder.setTransmitTimestamp(
+        LATE_ERA_RESPONSE.getHeader().getTransmitTimestamp());
+    responseHeaderBuilder.setReferenceTimestamp(
+        LATE_ERA_RESPONSE.getHeader().getReferenceTimestamp());
+    return NtpMessage.create(responseHeaderBuilder.build());
   }
 
   @Test
@@ -584,7 +610,7 @@ public class SntpClientEngineUnitTest {
     Timestamp64 transmitTimestamp = LATE_ERA_TRANSMIT_TIMESTAMP;
     Instant serverTime = LATE_ERA0_SERVER_INSTANT;
 
-    Duration totalsessionResultDuration = Duration.ofSeconds(10, 0); // Shouldn't matter
+    Duration totalSessionResultDuration = Duration.ofSeconds(10, 0); // Shouldn't matter
 
     checkClientOffsetMath(
         receiveTimestamp,
@@ -592,7 +618,7 @@ public class SntpClientEngineUnitTest {
         clientTime,
         serverTime,
         clientRequestTimestamp,
-        totalsessionResultDuration);
+        totalSessionResultDuration);
   }
 
   @Test
@@ -724,16 +750,22 @@ public class SntpClientEngineUnitTest {
     FakeSntpServerEngine fakeSntpServerEngine = testSntpServerWithNetwork.getSntpServerEngine();
     Duration processingDuration = Duration.ofSeconds(0, 10 * NANOS_PER_MILLISECOND);
     fakeSntpServerEngine.setSimulatedProcessingDuration(processingDuration);
-    NtpMessage responseTemplate = fakeSntpServerEngine.getResponseTemplate();
-    responseTemplate.setStratum(1);
-    responseTemplate.setLeapIndicator(0);
-    responseTemplate.setPollIntervalExponent(6);
-    responseTemplate.setPrecisionExponent(-20);
-    responseTemplate.setReferenceIdentifierAsString("GOOG");
+    NtpHeader.Builder responseHeaderBuilder =
+        testSntpServerWithNetwork
+            .getSntpServerEngine()
+            .getResponseTemplate()
+            .getHeader()
+            .toBuilder();
+    responseHeaderBuilder.setStratum(1);
+    responseHeaderBuilder.setLeapIndicator(0);
+    responseHeaderBuilder.setPollIntervalExponent(6);
+    responseHeaderBuilder.setPrecisionExponent(-20);
+    responseHeaderBuilder.setReferenceIdentifierAsString("GOOG");
     // Choose an arbitrary time for the reference timestamp (which is not used for any
     // calculations).
-    responseTemplate.setReferenceTimestamp(
+    responseHeaderBuilder.setReferenceTimestamp(
         Timestamp64.fromInstant(serverStartInstant.plus(millisDuration(50000))));
+    fakeSntpServerEngine.setResponseTemplate(NtpMessage.create(responseHeaderBuilder.build()));
 
     FakeInstantSource clientInstantSource = fakeClientClocks.getFakeInstantSource();
     SntpConnector sntpConnector =
@@ -748,35 +780,36 @@ public class SntpClientEngineUnitTest {
         testSntpServerWithNetwork.getSntpServerEngine().getLastResponseSent();
     assertSame(clientInstantSource, result.getInstantSource());
     assertEquals(3, result.getRequestVersion());
-    assertEquals(serverResponse.getVersionNumber(), result.getResponseVersion());
+    NtpHeader responseHeader = serverResponse.getHeader();
+    assertEquals(responseHeader.getVersionNumber(), result.getResponseVersion());
 
     // The result ticks should be when the response was received, which is the start time plus 2
     // network legs + server processing time.
     Duration expectedRoundTripDuration = networkPropagationDelay.plus(networkPropagationDelay);
     // Round trip time is just the network time (both legs).
     assertEquals(expectedRoundTripDuration, result.getRoundTripDuration());
-    Duration totalExpectedsessionResultDuration =
+    Duration totalExpectedSessionResultDuration =
         expectedRoundTripDuration.plus(processingDuration);
 
     // This is ultimately what we're trying to find...
     assertAlmostEquals(
         Duration.between(clientStartInstant, serverStartInstant), result.getClientOffset());
     assertEquals(
-        totalExpectedsessionResultDuration,
+        totalExpectedSessionResultDuration,
         clientStartTicks.durationUntil(result.getResultTicks()));
     assertAlmostEquals(
-        serverStartInstant.plus(totalExpectedsessionResultDuration), result.getResultInstant());
+        serverStartInstant.plus(totalExpectedSessionResultDuration), result.getResultInstant());
 
     // Check various metadata fields.
-    assertEquals(serverResponse.getPrecisionExponent(), result.getPrecisionExponent());
-    assertEquals(serverResponse.getPollIntervalAsDuration(), result.getPollInterval());
+    assertEquals(responseHeader.getPrecisionExponent(), result.getPrecisionExponent());
+    assertEquals(responseHeader.getPollIntervalAsDuration(), result.getPollInterval());
     assertEquals(
-        serverResponse.getReferenceIdentifierAsString(), result.getReferenceIdentifierAsString());
+        responseHeader.getReferenceIdentifierAsString(), result.getReferenceIdentifierAsString());
     assertEquals(
-        serverResponse.getReferenceTimestamp().toInstant(0),
+        responseHeader.getReferenceTimestamp().toInstant(0),
         result.getReferenceTimestampAsInstant());
-    assertEquals(serverResponse.getRootDelayDuration(), result.getRootDelayDuration());
-    assertEquals(serverResponse.getRootDispersionDuration(), result.getRootDispersionDuration());
+    assertEquals(responseHeader.getRootDelayDuration(), result.getRootDelayDuration());
+    assertEquals(responseHeader.getRootDispersionDuration(), result.getRootDispersionDuration());
     InetSocketAddress serverSocketAddress = testSntpServerWithNetwork.getServerSocketAddress();
     assertEquals(serverSocketAddress.getAddress(), result.getServerInetAddress());
     assertEquals(serverSocketAddress.getPort(), result.getServerPort());
@@ -811,5 +844,9 @@ public class SntpClientEngineUnitTest {
     return Duration.ofSeconds(
         millis / MILLISECONDS_PER_SECOND,
         (millis % MILLISECONDS_PER_SECOND) * NANOS_PER_MILLISECOND);
+  }
+
+  private static InetSocketAddress createSocketAddress() throws UnknownHostException {
+    return new InetSocketAddress(Inet4Address.getByAddress(bytes(216, 239, 35, 12)), 123);
   }
 }

@@ -16,6 +16,7 @@
 
 package com.google.time.client.sntp.impl;
 
+import static com.google.time.client.base.testing.Bytes.bytes;
 import static com.google.time.client.base.testing.DateTimeUtils.utc;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
@@ -26,6 +27,10 @@ import com.google.time.client.base.InstantSource;
 import com.google.time.client.base.Ticks;
 import com.google.time.client.base.testing.FakeClocks;
 import com.google.time.client.sntp.SntpResult;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -34,13 +39,13 @@ import org.junit.runners.JUnit4;
 public class SntpResultImplTest {
 
   @Test
-  public void basicBehavior() {
-    NtpMessage request = NtpMessage.createEmptyV3();
-    NtpMessage response = NtpMessage.createEmptyV3();
+  public void basicBehavior() throws Exception {
+    NtpHeader.Builder requestHeaderBuilder = NtpHeader.Builder.createEmptyV3();
+    NtpHeader.Builder responseHeaderBuilder = NtpHeader.Builder.createEmptyV3();
     // This instant value has been chosen because it can be represented as an NTP type exactly.
     Instant referenceTimestampAsInstant = utc(2020, 1, 2, 3, 4, 5, 500_000_000);
     Timestamp64 referenceTimestamp = Timestamp64.fromInstant(referenceTimestampAsInstant);
-    response.setReferenceTimestamp(referenceTimestamp);
+    responseHeaderBuilder.setReferenceTimestamp(referenceTimestamp);
 
     Duration roundtripDuration = Duration.ofSeconds(1, 0);
     Duration totalTransactionDuration = Duration.ofSeconds(2, 0);
@@ -50,9 +55,13 @@ public class SntpResultImplTest {
     Ticks resultTicks = fakeClocks.getFakeTicker().ticks();
     InstantSource instantSource = fakeClocks.getFakeInstantSource();
     Instant resultInstant = instantSource.instant();
+    NtpMessage request = NtpMessage.create(requestHeaderBuilder.build());
+    InetSocketAddress serverSocketAddress = new InetSocketAddress(createInetAddress("test"), 11111);
+    NtpMessage response = NtpMessage.create(responseHeaderBuilder.build());
     SntpResultImpl result =
         new SntpResultImpl(
             request,
+            serverSocketAddress,
             response,
             roundtripDuration,
             totalTransactionDuration,
@@ -84,8 +93,20 @@ public class SntpResultImplTest {
     assertEquals(resultTicks, result.getResultTicks());
     assertSame(instantSource, result.getInstantSource());
     assertEquals(resultInstant, result.getResultInstant());
-    assertEquals(request.getVersionNumber(), result.getRequestVersion());
-    assertEquals(response.getVersionNumber(), result.getResponseVersion());
-    assertEquals(response.getStratum(), result.getStratum());
+
+    NtpHeader requestHeader = request.getHeader();
+    assertEquals(requestHeader.getVersionNumber(), result.getRequestVersion());
+
+    NtpHeader responseHeader = response.getHeader();
+    assertEquals(responseHeader.getVersionNumber(), result.getResponseVersion());
+    assertEquals(responseHeader.getStratum(), result.getStratum());
+  }
+
+  private static InetAddress createInetAddress(String name) {
+    try {
+      return Inet4Address.getByAddress(name, bytes(192, 168, 0, 0));
+    } catch (UnknownHostException e) {
+      throw new RuntimeException("Unable to create address", e);
+    }
   }
 }

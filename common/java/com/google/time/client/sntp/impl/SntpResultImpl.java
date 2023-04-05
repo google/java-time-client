@@ -25,11 +25,13 @@ import com.google.time.client.base.impl.Objects;
 import com.google.time.client.sntp.InvalidNtpValueException;
 import com.google.time.client.sntp.SntpResult;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 /** The real implementation of {@link SntpResult}. */
 final class SntpResultImpl extends SntpResult {
 
   private final NtpMessage request;
+  private final InetSocketAddress serverSocketAddress;
   private final NtpMessage response;
   private final Duration totalTransactionDuration;
   private final Duration roundTripDuration;
@@ -41,6 +43,7 @@ final class SntpResultImpl extends SntpResult {
 
   SntpResultImpl(
       NtpMessage request,
+      InetSocketAddress serverSocketAddress,
       NtpMessage response,
       Duration roundTripDuration,
       Duration totalTransactionDuration,
@@ -49,8 +52,8 @@ final class SntpResultImpl extends SntpResult {
       Ticks resultTicks,
       InstantSource instantSource,
       Instant resultInstant) {
-    // The NTP messages.
     this.request = Objects.requireNonNull(request, "request");
+    this.serverSocketAddress = Objects.requireNonNull(serverSocketAddress, "serverSocketAddress");
     this.response = Objects.requireNonNull(response, "response");
 
     // Some other values derived from the request, response or captured during the interaction.
@@ -69,32 +72,32 @@ final class SntpResultImpl extends SntpResult {
 
   @Override
   public Duration getRootDelayDuration() {
-    return response.getRootDelayDuration();
+    return response.getHeader().getRootDelayDuration();
   }
 
   @Override
   public Duration getPollInterval() throws InvalidNtpValueException {
-    return response.getPollIntervalAsDuration();
+    return response.getHeader().getPollIntervalAsDuration();
   }
 
   @Override
   public int getPrecisionExponent() {
-    return response.getPrecisionExponent();
+    return response.getHeader().getPrecisionExponent();
   }
 
   @Override
   public Duration getRootDispersionDuration() {
-    return response.getRootDispersionDuration();
+    return response.getHeader().getRootDispersionDuration();
   }
 
   @Override
   public String getReferenceIdentifierAsString() {
-    return response.getReferenceIdentifierAsString();
+    return response.getHeader().getReferenceIdentifierAsString();
   }
 
   @Override
   public byte[] getReferenceIdentifier() {
-    return response.getReferenceIdentifier();
+    return response.getHeader().getReferenceIdentifier();
   }
 
   /**
@@ -106,7 +109,7 @@ final class SntpResultImpl extends SntpResult {
    */
   @VisibleForTesting
   Timestamp64 getReferenceTimestamp() {
-    return response.getReferenceTimestamp();
+    return response.getHeader().getReferenceTimestamp();
   }
 
   @Override
@@ -131,27 +134,27 @@ final class SntpResultImpl extends SntpResult {
 
   @Override
   public InetAddress getServerInetAddress() {
-    return Objects.requireNonNull(response.getInetAddress());
+    return Objects.requireNonNull(serverSocketAddress.getAddress());
   }
 
   @Override
   public int getServerPort() {
-    return Objects.requireNonNull(response.getPort());
+    return Objects.requireNonNull(serverSocketAddress.getPort());
   }
 
   @Override
   public int getRequestVersion() {
-    return request.getVersionNumber();
+    return request.getHeader().getVersionNumber();
   }
 
   @Override
   public int getResponseVersion() {
-    return response.getVersionNumber();
+    return response.getHeader().getVersionNumber();
   }
 
   @Override
   public int getStratum() {
-    return response.getStratum();
+    return response.getHeader().getStratum();
   }
 
   @VisibleForTesting

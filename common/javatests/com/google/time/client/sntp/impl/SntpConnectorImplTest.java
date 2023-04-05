@@ -89,7 +89,7 @@ public class SntpConnectorImplTest {
     when(clientConfig.serverAddress())
         .thenReturn(new ServerAddress("ntpserver1", serverAddresses[0].getPort()));
 
-    NtpMessage request = NtpMessage.createEmptyV3();
+    NtpMessage request = NtpMessage.create(NtpHeader.Builder.createEmptyV3().build());
     SntpConnector.Session session = connector.createSession();
     for (int i = 0; i < serverAddresses.length; i++) {
       assertTrue(session.canTrySend());
@@ -114,7 +114,7 @@ public class SntpConnectorImplTest {
     when(clientConfig.serverAddress())
         .thenReturn(new ServerAddress("ntpserver1", serverAddresses[0].getPort()));
 
-    NtpMessage request = NtpMessage.createEmptyV3();
+    NtpMessage request = NtpMessage.create(NtpHeader.Builder.createEmptyV3().build());
     SntpConnector.Session session = connector.createSession();
 
     assertTrue(session.canTrySend());
@@ -132,11 +132,10 @@ public class SntpConnectorImplTest {
 
     FakeSntpServerEngine sntpServerEngine = testSntpServerWithNetwork.getSntpServerEngine();
     NtpMessage lastRequestReceived = sntpServerEngine.getLastRequestReceived();
-    assertArrayEquals(lastRequestReceived.toByteArray(), result.request.toByteArray());
+    assertArrayEquals(lastRequestReceived.toBytes(), result.request.toBytes());
     assertNotNull(result.requestTimeTicks);
     assertNotNull(result.requestInstant);
-    assertArrayEquals(
-        sntpServerEngine.getLastResponseSent().toByteArray(), result.response.toByteArray());
+    assertArrayEquals(sntpServerEngine.getLastResponseSent().toBytes(), result.response.toBytes());
     assertNotNull(result.responseTimeTicks);
 
     verify(mockListener)
@@ -149,7 +148,7 @@ public class SntpConnectorImplTest {
     ServerAddress badServerAddress = new ServerAddress("not_ntpserver1", 456);
     when(clientConfig.serverAddress()).thenReturn(badServerAddress);
 
-    NtpMessage request = NtpMessage.createEmptyV3();
+    NtpMessage request = NtpMessage.create(NtpHeader.Builder.createEmptyV3().build());
     SntpConnector.Session session = connector.createSession();
 
     assertTrue(session.canTrySend());
