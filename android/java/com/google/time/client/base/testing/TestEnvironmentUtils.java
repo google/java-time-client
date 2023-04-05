@@ -65,9 +65,7 @@ public class TestEnvironmentUtils {
     assumeFalse(reason, isThisRobolectric());
   }
 
-  /**
-   * Returns {@code true} if running the Android variant of code under robolectric.
-   */
+  /** Returns {@code true} if running the Android variant of code under robolectric. */
   public static boolean isThisRobolectric() {
     // "robolectric" may also be acceptable.
     return Objects.equals(null, Build.FINGERPRINT);
