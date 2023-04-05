@@ -31,14 +31,17 @@ public final class Duration implements Comparable<Duration> {
 
   public static final Duration ZERO = Duration.ofSeconds(0, 0);
 
+  @SuppressWarnings("GoodTime") // Reflects java.time.Duration APIs
   public static Duration ofNanos(long nanos) {
     return new Duration(java.time.Duration.ofNanos(nanos));
   }
 
+  @SuppressWarnings("GoodTime") // Reflects java.time.Duration APIs
   public static Duration ofMillis(long millis) {
     return new Duration(java.time.Duration.ofMillis(millis));
   }
 
+  @SuppressWarnings("GoodTime") // Reflects java.time.Duration APIs
   public static Duration ofSeconds(long seconds, long nanoAdjustment) {
     return new Duration(java.time.Duration.ofSeconds(seconds, nanoAdjustment));
   }

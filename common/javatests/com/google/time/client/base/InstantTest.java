@@ -417,6 +417,7 @@ public class InstantTest {
     }
   }
 
+  @SuppressWarnings("AndroidJdkLibsChecker")
   @Test
   public void javaTimeInterop() {
     long epochMilli = 1234567890L;

@@ -147,6 +147,7 @@ public final class Instant implements Comparable<Instant> {
    *
    * <p>Interoperability with {@code java.time} classes for platforms that support it.
    */
+  @SuppressWarnings("AndroidJdkLibsChecker")
   @RequiresApi(Build.VERSION_CODES.O)
   public static Instant ofJavaTime(java.time.Instant javaTimeInstant) {
     return Instant.ofEpochSecond(javaTimeInstant.getEpochSecond(), javaTimeInstant.getNano());
@@ -157,6 +158,7 @@ public final class Instant implements Comparable<Instant> {
    *
    * <p>Interoperability with {@code java.time} classes for platforms that support it.
    */
+  @SuppressWarnings("AndroidJdkLibsChecker")
   @RequiresApi(Build.VERSION_CODES.O)
   public java.time.Instant toJavaTime() {
     return java.time.Instant.ofEpochSecond(getEpochSecond(), getNano());
