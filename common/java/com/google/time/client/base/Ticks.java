@@ -129,7 +129,7 @@ public final class Ticks implements Comparable<Ticks> {
 
   @Override
   public String toString() {
-    return "Ticks{" + "originalTicker=" + originTicker + ", nanoTicks=" + value + '}';
+    return "Ticks{" + "originalTicker=" + originTicker + ", value=" + value + '}';
   }
 
   @Override
