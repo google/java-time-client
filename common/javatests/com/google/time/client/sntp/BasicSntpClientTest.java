@@ -15,13 +15,15 @@
  */
 package com.google.time.client.sntp;
 
-import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.time.client.base.testing.FakeClocks;
+import com.google.time.client.base.Duration;
 import com.google.time.client.sntp.impl.SntpClientEngine;
+import java.net.UnknownHostException;
+import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,30 +32,30 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class BasicSntpClientTest {
 
-  private FakeClocks fakeClocks;
   private SntpClientEngine mockEngine;
   private BasicSntpClient client;
 
   @Before
   public void setUp() throws Exception {
-    fakeClocks = new FakeClocks();
     mockEngine = mock(SntpClientEngine.class);
-    client = new BasicSntpClient(mockEngine, fakeClocks.getFakeInstantSource());
+    client = new BasicSntpClient(mockEngine);
   }
 
   @Test
-  public void serverUnreachable() throws Exception {
-    when(mockEngine.requestInstant(fakeClocks.getFakeInstantSource()))
-        .thenThrow(new NtpServerNotReachableException("Test exception"));
+  public void executeQuery_serverLookupFails() throws Exception {
+    when(mockEngine.executeQuery(null)).thenThrow(new UnknownHostException());
 
-    assertThrows(NtpServerNotReachableException.class, () -> client.requestInstant());
+    assertThrows(UnknownHostException.class, () -> client.executeQuery(null));
   }
 
   @Test
-  public void responseReceived() throws Exception {
-    SntpResult mockResult = mock(SntpResult.class);
-    when(mockEngine.requestInstant(fakeClocks.getFakeInstantSource())).thenReturn(mockResult);
+  public void executeQuery() throws Exception {
+    Duration timeAllowed = Duration.ofSeconds(12, 34);
+    SntpQueryDebugInfo queryDebugInfo = new SntpQueryDebugInfo(Collections.emptyList());
+    SntpQueryResult expectedResult =
+        SntpQueryResult.success(queryDebugInfo, mock(SntpTimeSignal.class));
+    when(mockEngine.executeQuery(timeAllowed)).thenReturn(expectedResult);
 
-    assertSame(mockResult, client.requestInstant());
+    assertEquals(expectedResult, client.executeQuery(timeAllowed));
   }
 }

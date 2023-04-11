@@ -21,7 +21,10 @@ import static com.google.time.client.base.testing.Bytes.bytes;
 import com.google.time.client.base.Duration;
 import com.google.time.client.base.Network;
 import com.google.time.client.base.ServerAddress;
+import com.google.time.client.base.Ticks;
+import com.google.time.client.base.impl.Objects;
 import com.google.time.client.base.testing.Advanceable;
+import com.google.time.client.base.testing.FakeClocks;
 import com.google.time.client.sntp.impl.NtpMessage;
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -45,11 +48,9 @@ import java.util.Set;
  */
 public final class FakeNetwork implements Network {
 
-  public static final int FAILURE_MODE_RECEIVE_TIMEOUT = 0x1;
+  public static final int FAILURE_MODE_RECEIVE = 0x1;
 
-  public static final int FAILURE_MODE_RECEIVE = 0x2;
-
-  public static final int FAILURE_MODE_SEND = 0x4;
+  public static final int FAILURE_MODE_SEND = 0x2;
 
   public static final int FAILURE_MODE_NONE = 0;
 
@@ -58,6 +59,8 @@ public final class FakeNetwork implements Network {
   private final Map<String, List<InetAddress>> fakeDns = new HashMap<>();
   private final Set<InetAddress> knownAddresses = new HashSet<>();
   private final List<FakeUdpSocket> socketsCreated = new ArrayList<>();
+
+  private final FakeClocks clientClocks;
   private final List<Advanceable> advanceables = new ArrayList<>();
 
   private Duration networkPropagationTimeSend = Duration.ZERO;
@@ -65,11 +68,16 @@ public final class FakeNetwork implements Network {
 
   private int failureMode;
 
-  public FakeNetwork(TestSntpServerEngine serverEngine) {
-    this.serverEngine = serverEngine;
+  public FakeNetwork(TestSntpServerEngine serverEngine, FakeClocks clientClocks) {
+    this.serverEngine = Objects.requireNonNull(serverEngine);
+    this.clientClocks = Objects.requireNonNull(clientClocks);
+    advanceables.add(clientClocks);
   }
 
   public void addAdvanceable(Advanceable advanceable) {
+    if (advanceables.contains(advanceable)) {
+      throw new IllegalArgumentException(advanceable + " is already present");
+    }
     advanceables.add(advanceable);
   }
 
@@ -134,17 +142,19 @@ public final class FakeNetwork implements Network {
 
   public final class FakeUdpSocket implements UdpSocket {
 
-    private InetSocketAddress localSocketAddress =
+    private final InetSocketAddress localSocketAddress =
         new InetSocketAddress(Inet4Address.getLoopbackAddress(), 11111);
 
-    private List<DatagramPacket> packetsSent = new ArrayList<>();
+    private final List<DatagramPacket> packetsSent = new ArrayList<>();
 
-    private List<DatagramPacket> packetsReceived = new ArrayList<>();
+    private final List<DatagramPacket> packetsReceived = new ArrayList<>();
 
+    private DatagramPacket packetOnNetwork;
     private boolean isClosed;
 
     private NtpMessage nextResponseMessage;
     private SocketAddress nextResponseServerAddress;
+    private Duration soTimeout = Duration.ofSeconds(Integer.MAX_VALUE, 0);
 
     @Override
     public SocketAddress getLocalSocketAddress() {
@@ -154,7 +164,11 @@ public final class FakeNetwork implements Network {
     @Override
     public void setSoTimeout(Duration timeout) throws SocketException {
       checkSocketOpen();
-      // timeout value is currently ignored.
+      soTimeout = timeout;
+    }
+
+    public Duration getSoTimeout() {
+      return soTimeout;
     }
 
     @Override
@@ -170,30 +184,56 @@ public final class FakeNetwork implements Network {
         return;
       }
 
-      // Simulate the packet being travelling over the network and being received by the server.
+      if (packetOnNetwork != null) {
+        throw new IllegalStateException("FakeUdpSocket supports one packet on network at a time");
+      }
+      packetOnNetwork = packet;
+    }
+
+    @Override
+    public void receive(DatagramPacket packet) throws IOException {
+      // Handle the network send delay and process the packet in the engine.
+      FakeClocks.FakeTicker clientTicker = clientClocks.getFakeTicker();
+      Ticks receiveStartTicks = clientTicker.ticks();
+      processNetworkPacket();
+
+      // Now do the receive() work
+      checkSocketOpen();
+
+      if ((failureMode & FAILURE_MODE_RECEIVE) != 0) {
+        throw new IOException();
+      }
+
+      // This means that if the timeout triggers below, the current time will be after the
+      // propagation time, not the minimum time after the timeout has elapsed.
+      simulateElapsedTime(FakeNetwork.this.networkPropagationTimeReceive);
+
+      // Check to see if the blocking receive would fail with a timeout.
+      Duration timeElapsed = clientTicker.durationBetween(receiveStartTicks, clientTicker.ticks());
+      if (timeElapsed.compareTo(soTimeout) > 0) {
+        throw new SocketTimeoutException("Simulated receive timeout");
+      }
+
+      packetsReceived.add(packet);
+
+      byte[] bytes = nextResponseMessage.toBytes();
+      packet.setData(bytes);
+      packet.setSocketAddress(nextResponseServerAddress);
+    }
+
+    private void processNetworkPacket() {
+      if (packetOnNetwork == null) {
+        throw new IllegalStateException("Expected a packet to be in the fake network");
+      }
+      DatagramPacket packet = packetOnNetwork;
+      packetOnNetwork = null;
+
+      // Simulate the packet travelling over the network and being received by the server.
       simulateElapsedTime(FakeNetwork.this.networkPropagationTimeSend);
 
       NtpMessage requestMessage = NtpMessage.fromDatagramPacket(packet);
       nextResponseMessage = serverEngine.processRequest(requestMessage);
       nextResponseServerAddress = packet.getSocketAddress();
-    }
-
-    @Override
-    public void receive(DatagramPacket packet) throws IOException {
-      checkSocketOpen();
-
-      if ((failureMode & FAILURE_MODE_RECEIVE_TIMEOUT) != 0) {
-        throw new SocketTimeoutException();
-      } else if ((failureMode & FAILURE_MODE_RECEIVE) != 0) {
-        throw new IOException();
-      }
-      packetsReceived.add(packet);
-
-      simulateElapsedTime(FakeNetwork.this.networkPropagationTimeReceive);
-
-      byte[] bytes = nextResponseMessage.toBytes();
-      packet.setData(bytes);
-      packet.setSocketAddress(nextResponseServerAddress);
     }
 
     @Override

@@ -17,10 +17,12 @@
 package com.google.time.client.base;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 import com.google.time.client.base.testing.FakeClocks;
+import com.google.time.client.base.testing.MoreAsserts;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -34,16 +36,14 @@ public class TicksTest {
   @Test
   public void equalsAndHashcode() {
     Ticks ticks1_1 = Ticks.fromTickerValue(TICKER_1, 1234L);
-    assertEqualsAndHashcodeMatch(ticks1_1, ticks1_1);
-
     Ticks ticks1_2 = Ticks.fromTickerValue(TICKER_1, 1234L);
-    assertEqualsAndHashcodeMatch(ticks1_1, ticks1_2);
+    MoreAsserts.assertComparisonMethods(ticks1_1, ticks1_2);
 
     Ticks ticks2_1 = Ticks.fromTickerValue(TICKER_2, 1234L);
-    assertFalse(ticks1_1.equals(ticks2_1));
+    assertNotEquals(ticks1_1, ticks2_1);
 
     Ticks ticks1_3 = Ticks.fromTickerValue(TICKER_2, 4321L);
-    assertFalse(ticks1_1.equals(ticks1_3));
+    assertNotEquals(ticks1_1, ticks1_3);
   }
 
   private void assertEqualsAndHashcodeMatch(Ticks one, Ticks two) {
@@ -78,5 +78,17 @@ public class TicksTest {
 
     assertEquals(Duration.ofNanos(1), a.durationUntil(b));
     assertEquals(Duration.ofNanos(-1), b.durationUntil(a));
+  }
+
+  @Test
+  public void comparable() {
+    Ticks ticks1_1 = Ticks.fromTickerValue(TICKER_1, 1L);
+    Ticks ticks1_2 = Ticks.fromTickerValue(TICKER_1, 2L);
+    assertTrue(ticks1_1.compareTo(ticks1_2) < 0);
+    assertTrue(ticks1_2.compareTo(ticks1_1) > 0);
+
+    Ticks ticks2_1 = Ticks.fromTickerValue(TICKER_2, 1L);
+    assertThrows(ClassCastException.class, () -> ticks2_1.compareTo(ticks1_1));
+    assertThrows(ClassCastException.class, () -> ticks1_1.compareTo(ticks2_1));
   }
 }

@@ -33,9 +33,9 @@ maven_install(
     artifacts = [
         # Robolectric
         "org.robolectric:robolectric:4.7.3",
-        # Truth
+        # Truth (for tests)
         "com.google.truth:truth:1.1.3",
-        # Mockito
+        # Mockito (for tests)
         "org.mockito:mockito-android:jar:3.0.0",
         "org.mockito:mockito-core:jar:3.0.0",
         # Android annotation support

@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.time.client.base.impl.DateTimeConstants.MILLISECONDS_PER_SECOND;
 import static com.google.time.client.base.impl.DateTimeConstants.NANOS_PER_MILLISECOND;
 import static com.google.time.client.base.impl.DateTimeConstants.NANOS_PER_SECOND;
+import static com.google.time.client.base.testing.MoreAsserts.assertEqualityMethods;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -437,22 +438,5 @@ public class InstantTest {
           NoClassDefFoundError.class,
           () -> Instant.ofJavaTime(java.time.Instant.ofEpochMilli(epochMilli)));
     }
-  }
-
-  private static <T extends Comparable<T>> void assertEqualityMethods(T one, T two) {
-    assertSelfEquality(one);
-    assertSelfEquality(two);
-
-    assertEquals(0, one.compareTo(two));
-    assertEquals(0, two.compareTo(one));
-    assertEquals(one, two);
-    assertEquals(two.hashCode(), one.hashCode());
-  }
-
-  @SuppressWarnings("SelfComparison")
-  private static <T extends Comparable<T>> void assertSelfEquality(T obj) {
-    assertEquals(obj, obj);
-    assertEquals(0, obj.compareTo(obj));
-    assertEquals(obj.hashCode(), obj.hashCode());
   }
 }

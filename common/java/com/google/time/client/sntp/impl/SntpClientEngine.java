@@ -19,142 +19,123 @@ import com.google.time.client.base.Duration;
 import com.google.time.client.base.Instant;
 import com.google.time.client.base.InstantSource;
 import com.google.time.client.base.Logger;
+import com.google.time.client.base.Network;
+import com.google.time.client.base.NetworkOperationResult;
+import com.google.time.client.base.Supplier;
+import com.google.time.client.base.Ticker;
 import com.google.time.client.base.Ticks;
 import com.google.time.client.base.annotations.NonFinalForTesting;
 import com.google.time.client.base.annotations.VisibleForTesting;
+import com.google.time.client.base.impl.ClusteredServiceOperation;
+import com.google.time.client.base.impl.ClusteredServiceOperation.ClusteredServiceResult;
 import com.google.time.client.base.impl.Objects;
-import com.google.time.client.base.impl.PlatformRandom;
-import com.google.time.client.sntp.InvalidNtpResponseException;
+import com.google.time.client.sntp.BasicSntpClient.ClientConfig;
+import com.google.time.client.sntp.NtpProtocolException;
 import com.google.time.client.sntp.NtpServerNotReachableException;
-import com.google.time.client.sntp.SntpResult;
-import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.Random;
+import com.google.time.client.sntp.SntpQueryDebugInfo;
+import com.google.time.client.sntp.SntpQueryResult;
+import com.google.time.client.sntp.impl.SntpQueryOperation.FailureResult;
+import com.google.time.client.sntp.impl.SntpQueryOperation.SuccessResult;
+import java.net.UnknownHostException;
 
-/** Reusable, thread-safe, SNTP client logic. */
+/** Internal, reusable SNTP client logic. {@link #executeQuery} is thread-safe. */
 @NonFinalForTesting
 public class SntpClientEngine {
 
   private final Logger logger;
-  private final SntpConnector sntpConnector;
-  private final Random random;
-  // Default to true, as this is the safest state.
-  private boolean clientDataMinimizationEnabled = true;
+  private final SntpServiceConnector sntpServiceConnector;
 
-  public SntpClientEngine(Logger logger, SntpConnector sntpConnector) {
-    this(logger, sntpConnector, PlatformRandom.getDefaultRandom());
-  }
+  public static SntpClientEngine create(
+      Logger logger,
+      InstantSource instantSource,
+      ClientConfig clientConfig,
+      Network network,
+      Ticker ticker,
+      Supplier<NtpMessage> requestSupplier) {
 
-  public SntpClientEngine(Logger logger, SntpConnector sntpConnector, Random random) {
-    this.logger = Objects.requireNonNull(logger, "logger");
-    this.sntpConnector = Objects.requireNonNull(sntpConnector, "sntpConnector");
-    this.random = Objects.requireNonNull(random, "random");
-  }
-
-  /** Sets whether client data minimization is enabled. The default is enabled. */
-  public void setClientDataMinimizationEnabled(boolean enabled) {
-    clientDataMinimizationEnabled = enabled;
-  }
-
-  /**
-   * Requests the current server instant using the associated {@link SntpConnector}.
-   *
-   * @param clientInstantSource the {@link InstantSource} to use to obtain client time
-   * @return the result of a successful SNTP request
-   * @throws NtpServerNotReachableException if no servers could be reached, or they returned invalid
-   *     responses
-   */
-  public SntpResult requestInstant(InstantSource clientInstantSource)
-      throws NtpServerNotReachableException {
-
-    NtpServerNotReachableException overallException = new NtpServerNotReachableException("");
-    SntpConnector.Session session = sntpConnector.createSession();
-    NtpMessage request = createRequest(clientDataMinimizationEnabled, random, clientInstantSource);
-    if (logger.isLoggingFine()) {
-      logger.fine("requestInstant(): Sending request: " + request);
-    }
-    try {
-      while (session.canTrySend()) {
-        SntpSessionResult sessionResult;
-        try {
-          sessionResult = session.trySend(request);
-          if (logger.isLoggingFine()) {
-            logger.fine("requestInstant(): Response received sessionResult=" + sessionResult);
-          }
-        } catch (NtpServerNotReachableException e) {
-          if (logger.isLoggingFine()) {
-            logger.fine("requestInstant(): Server not reachable", e);
-          }
-          overallException.addSuppressed(e);
-          // Try the next server.
-          continue;
-        }
-
-        try {
-          SntpResultImpl sntpResult = processResponse(clientInstantSource, sessionResult);
-          if (logger.isLoggingFine()) {
-            logger.fine(
-                "requestInstant(): Response from address="
-                    + sessionResult.serverSocketAddress
-                    + " is valid: sntpResult="
-                    + sntpResult);
-          }
-          return sntpResult;
-        } catch (InvalidNtpResponseException e) {
-          if (logger.isLoggingFine()) {
-            logger.fine(
-                "requestInstant(): Response from address="
-                    + sessionResult.serverSocketAddress
-                    + " is invalid.",
-                e);
-          }
-          session.reportInvalidResponse(sessionResult, e);
-          overallException.addSuppressed(e);
-          // Repeat the loop if possible.
-        }
-      }
-      // The loop terminates early if it is successful. Reaching here must mean failure.
-      logger.fine(
-          "requestInstant(): Failed to communicate with all session servers", overallException);
-      throw overallException;
-    } catch (Exception e) {
-      if (logger.isLoggingFine()) {
-        logger.fine("requestInstant() failed", e);
-      }
-      throw e;
-    }
+    SntpQueryOperation sntpQueryOperation =
+        new SntpQueryOperation(
+            logger, network, instantSource, ticker, clientConfig, requestSupplier);
+    ClusteredServiceOperation<Void, SuccessResult, FailureResult> networkServiceConnector =
+        new ClusteredServiceOperation<>(ticker, network, sntpQueryOperation);
+    SntpServiceConnectorImpl sntpServiceConnector =
+        new SntpServiceConnectorImpl(clientConfig, networkServiceConnector);
+    return new SntpClientEngine(logger, sntpServiceConnector);
   }
 
   @VisibleForTesting
-  static NtpMessage createRequest(
-      boolean clientDataMinimization, Random random, InstantSource clientInstantSource) {
-    NtpHeader.Builder headerBuilder = NtpHeader.Builder.createEmptyV3();
-    headerBuilder.setMode(NtpHeader.NTP_MODE_CLIENT);
+  public SntpClientEngine(Logger logger, SntpServiceConnector sntpServiceConnector) {
+    this.logger = Objects.requireNonNull(logger, "logger");
+    this.sntpServiceConnector = Objects.requireNonNull(sntpServiceConnector, "sntpServerConnector");
+  }
 
-    // Since it doesn't really matter what we send here (the server shouldn't use it for anything
-    // except round-tripping), the transmit timestamp can be different from the value actually
-    // used by the client.
-    Timestamp64 requestTransmitTimestamp;
-    if (clientDataMinimization) {
-      // As per: https://datatracker.ietf.org/doc/html/draft-ietf-ntp-data-minimization-04
-      // Using an entirely random timestamp is better than revealing client clock data.
-      long eraSeconds = random.nextInt() & 0xFFFF_FFFFL;
-      requestTransmitTimestamp = Timestamp64.fromComponents(eraSeconds, random.nextInt());
-    } else {
-      Instant requestTransmitInstant = clientInstantSource.instant();
-      requestTransmitTimestamp = Timestamp64.fromInstant(requestTransmitInstant);
-      if (clientInstantSource.getPrecision() <= InstantSource.PRECISION_MILLIS) {
-        // requestTransmitTimestamp is treated as a nonce, so randomize the sub-millis nanos to
-        // ensure it is less predictable. This introduces an error, but only up to 1 millis, e.g.
-        // requestTransmitTimestamp could now be in the future or in the past, but less than 1
-        // millis.
-        // The value is not used by the client again, and the server also shouldn't be using it for
-        // anything that affects the response we get (besides replaying it back to the client).
-        requestTransmitTimestamp = requestTransmitTimestamp.randomizeSubMillis(random);
-      }
+  /**
+   * Queries the current server instant using the associated {@link SntpServiceConnector}.
+   *
+   * @param timeAllowed the time allowed or {@code null} for indefinite. The time allowed is
+   *     considered a guide and may be exceeded
+   * @return the result of a successful SNTP request or information about the failure
+   */
+  public SntpQueryResult executeQuery(Duration timeAllowed) throws UnknownHostException {
+    ClusteredServiceResult<SuccessResult, FailureResult> clusteredServiceResult =
+        sntpServiceConnector.executeQuery(timeAllowed);
+
+    if (logger.isLoggingFine()) {
+      logger.fine("executeQuery(): clusteredServiceResult=" + clusteredServiceResult);
     }
-    headerBuilder.setTransmitTimestamp(requestTransmitTimestamp);
-    return NtpMessage.create(headerBuilder.build());
+
+    // Every result, whatever the outcome, can have some information about servers that have been
+    // tried. This is needed in all results so build the common aspects first.
+    SntpQueryDebugInfo sntpQueryDebugInfo =
+        new SntpQueryDebugInfo(clusteredServiceResult.getServiceAddresses());
+    for (FailureResult failureResult : clusteredServiceResult.getFailureValues()) {
+      sntpQueryDebugInfo.addSntpQueryOperationResults(
+          NetworkOperationResult.failure(
+              failureResult.serverSocketAddress, failureResult.failureException));
+    }
+
+    if (clusteredServiceResult.isSuccess()) {
+      sntpQueryDebugInfo.addSntpQueryOperationResults(
+          NetworkOperationResult.success(
+              clusteredServiceResult.getSuccessValue().serverSocketAddress));
+
+      return processSuccessResult(sntpQueryDebugInfo, clusteredServiceResult);
+    } else if (clusteredServiceResult.isTimeAllowedExceeded()) {
+      return SntpQueryResult.timeAllowedExceeded(sntpQueryDebugInfo);
+    } else if (clusteredServiceResult.isHalted()) {
+      // Must be a failure: Halted means a cluster member responded in a way that suggests the whole
+      // cluster is "bad" and there's some kind of protocol problem.
+      return SntpQueryResult.protocolError(
+          sntpQueryDebugInfo, clusteredServiceResult.getLastFailureValue().failureException);
+    } else {
+      // Must be a non-halting failure.
+      NtpServerNotReachableException e =
+          new NtpServerNotReachableException("IP addresses exhausted");
+      for (FailureResult failureResult : clusteredServiceResult.getFailureValues()) {
+        e.addSuppressed(failureResult.failureException);
+      }
+      return SntpQueryResult.retryLater(sntpQueryDebugInfo, e);
+    }
+  }
+
+  private SntpQueryResult processSuccessResult(
+      SntpQueryDebugInfo sntpQueryDebugInfo,
+      ClusteredServiceResult<SuccessResult, FailureResult> clusteredServiceResult) {
+    SuccessResult successResult = clusteredServiceResult.getSuccessValue();
+
+    NtpMessage response = successResult.response;
+    try {
+      SntpTimeSignalImpl timeSignal = performNtpCalculations(successResult, response);
+      return SntpQueryResult.success(sntpQueryDebugInfo, timeSignal);
+    } catch (NtpProtocolException e) {
+      if (logger.isLoggingFine()) {
+        logger.fine("executeQuery(): Unable to process SNTP response", e);
+      }
+
+      return SntpQueryResult.protocolError(
+          sntpQueryDebugInfo,
+          new NtpServerNotReachableException("Failed to perform NTP calculation on result", e));
+    }
   }
 
   /**
@@ -162,21 +143,14 @@ public class SntpClientEngine {
    * leaving the networking logic to be tested elsewhere.
    */
   @VisibleForTesting
-  public static SntpResultImpl processResponse(
-      InstantSource instantSource, SntpSessionResult sessionResult)
-      throws InvalidNtpResponseException {
+  public static SntpTimeSignalImpl performNtpCalculations(
+      SuccessResult successResult, NtpMessage response) throws NtpProtocolException {
 
-    NtpMessage request = sessionResult.request;
-    InetSocketAddress serverSocketAddress = sessionResult.serverSocketAddress;
-    NtpMessage response = sessionResult.response;
-    NtpHeader responseHeader = response.getHeader();
+    final NtpHeader responseHeader = response.getHeader();
 
-    // Initial validation.
-    validateServerResponse(request, response);
-
-    Instant requestInstant = sessionResult.requestInstant;
-    Ticks requestTimeTicks = sessionResult.requestTimeTicks;
-    Ticks responseTimeTicks = sessionResult.responseTimeTicks;
+    final Instant requestInstant = successResult.requestInstant;
+    final Ticks requestTimeTicks = successResult.requestTimeTicks;
+    final Ticks responseTimeTicks = successResult.responseTimeTicks;
 
     // T1 / [client]requestTimestamp
     final Timestamp64 requestTimestamp = Timestamp64.fromInstant(requestInstant);
@@ -201,13 +175,13 @@ public class SntpClientEngine {
     // More validation
     if (serverProcessingDuration.compareTo(Duration.ZERO) < 0) {
       // Paranoia: serverProcessingDuration cannot be negative.
-      throw new InvalidNtpResponseException(
+      throw new NtpProtocolException(
           "serverProcessingDuration=" + serverProcessingDuration + " must not be negative");
     } else {
       if (serverProcessingDuration.compareTo(totalTransactionDuration) > 0) {
         // Paranoia: serverProcessingDuration cannot be greater than the elapsed time measured by
         // the client.
-        throw new InvalidNtpResponseException(
+        throw new NtpProtocolException(
             "serverProcessingDuration is too high."
                 + " serverProcessingDuration="
                 + serverProcessingDuration
@@ -237,90 +211,16 @@ public class SntpClientEngine {
 
     Instant adjustedClientInstant = responseInstant.plus(clientOffsetDuration);
 
-    return new SntpResultImpl(
-        request,
-        serverSocketAddress,
+    return new SntpTimeSignalImpl(
+        successResult.serverSocketAddress,
         response,
         roundTripDuration,
         totalTransactionDuration,
         responseInstant,
         clientOffsetDuration,
         responseTimeTicks,
-        instantSource,
+        successResult.instantSource,
         adjustedClientInstant);
-  }
-
-  @VisibleForTesting
-  static void validateServerResponse(NtpMessage request, NtpMessage response)
-      throws InvalidNtpResponseException {
-
-    NtpHeader requestHeader = request.getHeader();
-    NtpHeader responseHeader = response.getHeader();
-
-    // RFC 4330 / 5.  SNTP Client Operations: Suggested check 3.
-    // T1 / [server]originateTimestamp should be the same as [client]requestTimestamp, because the
-    // server should echo it back to us.
-    // Do validation according to RFC: if the response originateTimestamp != transmitTimestamp
-    // then perhaps this response is an attack.
-    final Timestamp64 requestTransmitTimestamp = requestHeader.getTransmitTimestamp();
-    final Timestamp64 originateTimestamp = responseHeader.getOriginateTimestamp();
-    if (!requestTransmitTimestamp.equals(originateTimestamp)) {
-      throw new InvalidNtpResponseException(
-          "Received originateTimestamp="
-              + originateTimestamp
-              + " but expected "
-              + requestTransmitTimestamp);
-    }
-
-    // RFC 4330 / 5.  SNTP Client Operations: Suggested check 4 includes LI == 0 as invalid.
-    // But, that's also suggested as a valid value in the table above, so the check is not
-    // implemented.
-
-    // RFC 4330 / 5.  SNTP Client Operations: Suggested check 4. We do not support multicast here.
-    // RFC 4330 / 4.  Message Format: In unicast and manycast modes, [...] the server sets it to 4
-    //   (server) in the reply.
-    if (responseHeader.getMode() != NtpHeader.NTP_MODE_SERVER) {
-      throw new InvalidNtpResponseException("untrusted mode: " + responseHeader.getMode());
-    }
-    int stratum = responseHeader.getStratum();
-    // RFC 4330 / 5.  SNTP Client Operations: Suggested check 4
-    if ((stratum == NtpHeader.NTP_STRATUM_DEATH)) {
-      // RFC 4330 / 6. SNTP Server Operations: If the server is not
-      //   synchronized, the Stratum field is set to zero, and the Reference
-      //   Identifier field is set to an ASCII error identifier...
-      throw new InvalidNtpResponseException(
-          "untrusted stratum: "
-              + stratum
-              + ", reference id="
-              + responseHeader.getReferenceIdentifierAsString()
-              + "("
-              + Arrays.toString(responseHeader.getReferenceIdentifier())
-              + ")");
-    }
-    // RFC 4330 / 5.  SNTP Client Operations: Suggested check 4
-    if (responseHeader.getTransmitTimestamp().equals(Timestamp64.ZERO)) {
-      throw new InvalidNtpResponseException("zero transmit timestamp");
-    }
-
-    // RFC 4330 / 5.  SNTP Client Operations: Suggested check 5 are not implemented
-
-    // RFC 4330 / 4.  Message Format: On startup, servers set this field to 3 (clock not
-    //   synchronized), and set this field to some other value when synchronized to the primary
-    //   reference clock.
-    // Checking this value is not suggested by the RFC, but it looks like it's an invalid /
-    // unacceptable state.
-    if (responseHeader.getLeapIndicator() == NtpHeader.NTP_LEAP_NOSYNC) {
-      throw new InvalidNtpResponseException("Unsynchronized server");
-    }
-
-    // RFC 4330 / 5.  SNTP Client Operations: The table suggests the max is 15.
-    if (stratum > NtpHeader.NTP_STRATUM_MAX) {
-      throw new InvalidNtpResponseException("untrusted stratum: " + stratum);
-    }
-
-    if (responseHeader.getReferenceTimestamp().equals(Timestamp64.ZERO)) {
-      throw new InvalidNtpResponseException("zero reference timestamp");
-    }
   }
 
   /**

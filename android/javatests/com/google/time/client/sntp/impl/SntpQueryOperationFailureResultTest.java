@@ -1,0 +1,1 @@
+../../../../../../../../common/javatests/com/google/time/client/sntp/impl/SntpQueryOperationFailureResultTest.java

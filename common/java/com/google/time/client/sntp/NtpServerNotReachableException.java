@@ -17,7 +17,7 @@
 package com.google.time.client.sntp;
 
 /** Thrown if communication with the NTP server failed. */
-public final class NtpServerNotReachableException extends NtpException {
+public final class NtpServerNotReachableException extends Exception {
 
   public NtpServerNotReachableException(String message) {
     super(message);

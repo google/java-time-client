@@ -28,6 +28,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 
+import com.google.time.client.base.testing.MoreAsserts;
 import com.google.time.client.base.testing.TestEnvironmentUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,11 +51,11 @@ public class DurationTest {
 
     {
       Duration otherZero = Duration.ofNanos(0);
-      assertEqualityMethods(constantZero, otherZero);
+      MoreAsserts.assertComparisonMethods(constantZero, otherZero);
     }
     {
       Duration otherZero = Duration.ofMillis(0);
-      assertEqualityMethods(constantZero, otherZero);
+      MoreAsserts.assertComparisonMethods(constantZero, otherZero);
     }
   }
 
@@ -167,11 +168,11 @@ public class DurationTest {
 
     {
       Duration otherPosOneSecond = Duration.ofNanos(NANOS_PER_SECOND);
-      assertEqualityMethods(posOneSecond, otherPosOneSecond);
+      MoreAsserts.assertComparisonMethods(posOneSecond, otherPosOneSecond);
     }
     {
       Duration otherPosOneSecond = Duration.ofMillis(MILLISECONDS_PER_SECOND);
-      assertEqualityMethods(posOneSecond, otherPosOneSecond);
+      MoreAsserts.assertComparisonMethods(posOneSecond, otherPosOneSecond);
     }
   }
 
@@ -191,11 +192,11 @@ public class DurationTest {
 
     {
       Duration otherNegOneSecond = Duration.ofNanos(-1 * NANOS_PER_SECOND);
-      assertEqualityMethods(negOneSecond, otherNegOneSecond);
+      MoreAsserts.assertComparisonMethods(negOneSecond, otherNegOneSecond);
     }
     {
       Duration otherNegOneSecond = Duration.ofMillis(-1 * MILLISECONDS_PER_SECOND);
-      assertEqualityMethods(negOneSecond, otherNegOneSecond);
+      MoreAsserts.assertComparisonMethods(negOneSecond, otherNegOneSecond);
     }
   }
 
@@ -214,7 +215,7 @@ public class DurationTest {
     assertNotNull(posOneNano.toString());
 
     Duration otherPosOneNano = Duration.ofNanos(1);
-    assertEqualityMethods(posOneNano, otherPosOneNano);
+    MoreAsserts.assertComparisonMethods(posOneNano, otherPosOneNano);
   }
 
   @Test
@@ -233,11 +234,11 @@ public class DurationTest {
 
     {
       Duration otherPosOneMilli = Duration.ofNanos(NANOS_PER_MILLISECOND);
-      assertEqualityMethods(posOneMilli, otherPosOneMilli);
+      MoreAsserts.assertComparisonMethods(posOneMilli, otherPosOneMilli);
     }
     {
       Duration otherPosOneMilli = Duration.ofMillis(1);
-      assertEqualityMethods(posOneMilli, otherPosOneMilli);
+      MoreAsserts.assertComparisonMethods(posOneMilli, otherPosOneMilli);
     }
   }
 
@@ -261,7 +262,7 @@ public class DurationTest {
     assertNotNull(negOneNano.toString());
 
     Duration otherNegOneNano = Duration.ofNanos(-1);
-    assertEqualityMethods(negOneNano, otherNegOneNano);
+    MoreAsserts.assertComparisonMethods(negOneNano, otherNegOneNano);
   }
 
   @Test
@@ -280,11 +281,11 @@ public class DurationTest {
 
     {
       Duration otherNegOneMilli = Duration.ofNanos(-1 * NANOS_PER_MILLISECOND);
-      assertEqualityMethods(negOneMilli, otherNegOneMilli);
+      MoreAsserts.assertComparisonMethods(negOneMilli, otherNegOneMilli);
     }
     {
       Duration otherNegOneMilli = Duration.ofMillis(-1);
-      assertEqualityMethods(negOneMilli, otherNegOneMilli);
+      MoreAsserts.assertComparisonMethods(negOneMilli, otherNegOneMilli);
     }
   }
 
@@ -303,7 +304,7 @@ public class DurationTest {
     assertNotNull(pos999999999Nano.toString());
 
     Duration otherPos999999999Nano = Duration.ofNanos(999999999);
-    assertEqualityMethods(pos999999999Nano, otherPos999999999Nano);
+    MoreAsserts.assertComparisonMethods(pos999999999Nano, otherPos999999999Nano);
   }
 
   @Test
@@ -322,11 +323,11 @@ public class DurationTest {
 
     {
       Duration otherPos999Milli = Duration.ofNanos(999000000);
-      assertEqualityMethods(pos999Milli, otherPos999Milli);
+      MoreAsserts.assertComparisonMethods(pos999Milli, otherPos999Milli);
     }
     {
       Duration otherPos999Milli = Duration.ofMillis(999);
-      assertEqualityMethods(pos999Milli, otherPos999Milli);
+      MoreAsserts.assertComparisonMethods(pos999Milli, otherPos999Milli);
     }
   }
 
@@ -350,7 +351,7 @@ public class DurationTest {
     assertNotNull(neg999999999Nano.toString());
 
     Duration otherNeg999999999Nano = Duration.ofNanos(-999999999);
-    assertEqualityMethods(neg999999999Nano, otherNeg999999999Nano);
+    MoreAsserts.assertComparisonMethods(neg999999999Nano, otherNeg999999999Nano);
   }
 
   @Test
@@ -369,11 +370,11 @@ public class DurationTest {
 
     {
       Duration otherNeg999Milli = Duration.ofNanos(-999000000);
-      assertEqualityMethods(neg999Milli, otherNeg999Milli);
+      MoreAsserts.assertComparisonMethods(neg999Milli, otherNeg999Milli);
     }
     {
       Duration otherNeg999Milli = Duration.ofMillis(-999);
-      assertEqualityMethods(neg999Milli, otherNeg999Milli);
+      MoreAsserts.assertComparisonMethods(neg999Milli, otherNeg999Milli);
     }
   }
 
@@ -812,7 +813,7 @@ public class DurationTest {
   // Covers equals(Object), compareTo(Duration) & hashCode() (for equality only).
   @Test
   public void equals() {
-    assertEqualityMethods(Duration.ofNanos(0), Duration.ZERO);
+    MoreAsserts.assertComparisonMethods(Duration.ofNanos(0), Duration.ZERO);
     doEqualityTest(1);
     doEqualityTest(-1);
     doEqualityTest(NANOS_PER_SECOND);
@@ -831,11 +832,11 @@ public class DurationTest {
   }
 
   private static void doEqualityTest(long nanos) {
-    assertEqualityMethods(Duration.ofNanos(nanos), Duration.ofNanos(nanos));
+    MoreAsserts.assertComparisonMethods(Duration.ofNanos(nanos), Duration.ofNanos(nanos));
   }
 
   private static void doEqualityTest(long seconds, int nanosOfSecond) {
-    assertEqualityMethods(
+    MoreAsserts.assertComparisonMethods(
         Duration.ofSeconds(seconds, nanosOfSecond), Duration.ofSeconds(seconds, nanosOfSecond));
   }
 
@@ -910,22 +911,5 @@ public class DurationTest {
       assertThrows(
           NoClassDefFoundError.class, () -> Duration.ofJavaTime(java.time.Duration.ofNanos(nanos)));
     }
-  }
-
-  private static <T extends Comparable<T>> void assertEqualityMethods(T one, T two) {
-    assertSelfEquality(one);
-    assertSelfEquality(two);
-
-    assertEquals(0, one.compareTo(two));
-    assertEquals(0, two.compareTo(one));
-    assertEquals(one, two);
-    assertEquals(two.hashCode(), one.hashCode());
-  }
-
-  @SuppressWarnings("SelfComparison")
-  private static <T extends Comparable<T>> void assertSelfEquality(T obj) {
-    assertEquals(obj, obj);
-    assertEquals(0, obj.compareTo(obj));
-    assertEquals(obj.hashCode(), obj.hashCode());
   }
 }

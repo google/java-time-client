@@ -18,12 +18,8 @@ package com.google.time.client.sntp.impl;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 
 import com.google.time.client.base.Duration;
-import com.google.time.client.base.InstantSource;
-import com.google.time.client.base.testing.FakeClocks;
-import com.google.time.client.base.testing.PredictableRandom;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import org.junit.Test;
@@ -32,85 +28,6 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class NtpMessageTest {
-
-  @Test
-  public void createSntpRequest_clientDataMinimization() {
-    PredictableRandom random = new PredictableRandom(1234, 5678);
-    FakeClocks fakeClocks = new FakeClocks();
-    FakeClocks.FakeInstantSource instantSource = fakeClocks.getFakeInstantSource();
-    instantSource.setEpochMillis(1_234_567_891L);
-
-    boolean clientDataMinimization = true;
-    NtpMessage requestMessage =
-        NtpMessage.createSntpRequest(3, clientDataMinimization, random, instantSource);
-    assertDefaultRequestFields(requestMessage);
-
-    // These are the important properties.
-    assertEquals(NtpHeader.NTP_MODE_CLIENT, requestMessage.getHeader().getMode());
-    assertEquals(3, requestMessage.getHeader().getVersionNumber());
-
-    // Check for randomization of the transmit timestamp.
-    Timestamp64 expectedTransmitTimestamp =
-        Timestamp64.fromComponents(random.nextInt() & 0xFFFF_FFFFL, random.nextInt());
-    assertEquals(expectedTransmitTimestamp, requestMessage.getHeader().getTransmitTimestamp());
-  }
-
-  @Test
-  public void createSntpRequest_noClientDataMinimization_millisInstantSource() {
-    PredictableRandom random = new PredictableRandom();
-    FakeClocks fakeClocks = new FakeClocks();
-    FakeClocks.FakeInstantSource instantSource = fakeClocks.getFakeInstantSource();
-    instantSource.setEpochMillis(1_234_567_891L);
-
-    boolean clientDataMinimization = false;
-    NtpMessage requestMessage =
-        NtpMessage.createSntpRequest(3, clientDataMinimization, random, instantSource);
-    assertDefaultRequestFields(requestMessage);
-
-    // These are the important properties.
-    assertEquals(NtpHeader.NTP_MODE_CLIENT, requestMessage.getHeader().getMode());
-    assertEquals(3, requestMessage.getHeader().getVersionNumber());
-
-    // Check for randomization of millis-resolution transmit timestamp.
-    Timestamp64 actualTime = Timestamp64.fromInstant(instantSource.instant());
-    Timestamp64 expectedTransmitTimestamp = actualTime.randomizeSubMillis(random);
-    assertNotEquals(actualTime, expectedTransmitTimestamp);
-    assertEquals(expectedTransmitTimestamp, requestMessage.getHeader().getTransmitTimestamp());
-  }
-
-  @Test
-  public void createSntpRequest_noClientDataMinimization_nanosInstantSource() {
-    PredictableRandom random = new PredictableRandom();
-    FakeClocks fakeClocks = new FakeClocks();
-    FakeClocks.FakeInstantSource instantSource = fakeClocks.getFakeInstantSource();
-    instantSource.setPrecision(InstantSource.PRECISION_NANOS);
-    instantSource.setEpochNanos(1_234_567_891L);
-
-    boolean clientDataMinimization = false;
-    NtpMessage requestMessage =
-        NtpMessage.createSntpRequest(3, clientDataMinimization, random, instantSource);
-    assertDefaultRequestFields(requestMessage);
-
-    // These are the important properties.
-    assertEquals(NtpHeader.NTP_MODE_CLIENT, requestMessage.getHeader().getMode());
-    assertEquals(3, requestMessage.getHeader().getVersionNumber());
-
-    // Check for no randomization of nano-resolution transmit timestamp.
-    Timestamp64 actualTime = Timestamp64.fromInstant(instantSource.instant());
-    assertEquals(requestMessage.getHeader().getTransmitTimestamp(), actualTime);
-  }
-
-  private static void assertDefaultRequestFields(NtpMessage ntpMessage) {
-    NtpHeader ntpHeader = ntpMessage.getHeader();
-    assertEquals(0, ntpHeader.getLeapIndicator());
-    assertEquals(0, ntpHeader.getPrecisionExponent());
-    assertEquals(Duration.ZERO, ntpHeader.getRootDelayDuration());
-    assertEquals(Duration.ZERO, ntpHeader.getRootDispersionDuration());
-    assertEquals("", ntpHeader.getReferenceIdentifierAsString());
-    assertEquals(Timestamp64.ZERO, ntpHeader.getReferenceTimestamp());
-    assertEquals(Timestamp64.ZERO, ntpHeader.getOriginateTimestamp());
-    assertEquals(Timestamp64.ZERO, ntpHeader.getReceiveTimestamp());
-  }
 
   @Test
   public void datagramPacket() throws Exception {

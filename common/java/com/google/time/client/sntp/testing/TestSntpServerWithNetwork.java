@@ -21,15 +21,22 @@ import com.google.time.client.base.InstantSource;
 import com.google.time.client.base.Network;
 import com.google.time.client.base.PlatformNetwork;
 import com.google.time.client.base.ServerAddress;
+import com.google.time.client.base.Supplier;
 import com.google.time.client.base.Ticker;
+import com.google.time.client.base.impl.ClusteredServiceOperation;
 import com.google.time.client.base.impl.NoOpLogger;
 import com.google.time.client.base.impl.Objects;
 import com.google.time.client.base.testing.FakeClocks;
+import com.google.time.client.base.testing.PredictableRandom;
 import com.google.time.client.sntp.BasicSntpClient;
-import com.google.time.client.sntp.NoOpSntpNetworkListener;
-import com.google.time.client.sntp.impl.SntpConnector;
-import com.google.time.client.sntp.impl.SntpConnectorImpl;
+import com.google.time.client.sntp.impl.NtpMessage;
+import com.google.time.client.sntp.impl.SntpQueryOperation;
+import com.google.time.client.sntp.impl.SntpQueryOperation.FailureResult;
+import com.google.time.client.sntp.impl.SntpQueryOperation.SuccessResult;
+import com.google.time.client.sntp.impl.SntpRequestFactory;
+import com.google.time.client.sntp.impl.SntpServiceConnectorImpl;
 import java.net.InetSocketAddress;
+import java.util.Random;
 import java.util.concurrent.Callable;
 
 /** A test NTP server with a network for SNTP clients. */
@@ -45,10 +52,9 @@ public final class TestSntpServerWithNetwork<E extends TestSntpServerEngine, N e
     fakeInMemoryNtpServer.addAdvanceable(serverClocks);
     fakeInMemoryNtpServer.addAdvanceable(clientClocks);
 
-    FakeNetwork fakeNetwork = new FakeNetwork(fakeInMemoryNtpServer);
+    FakeNetwork fakeNetwork = new FakeNetwork(fakeInMemoryNtpServer, clientClocks);
     fakeNetwork.addServerIpAddress("defaultntpserver");
     fakeNetwork.addAdvanceable(serverClocks);
-    fakeNetwork.addAdvanceable(clientClocks);
     return new TestSntpServerWithNetwork<>(
         fakeInMemoryNtpServer,
         fakeNetwork,
@@ -61,18 +67,19 @@ public final class TestSntpServerWithNetwork<E extends TestSntpServerEngine, N e
    * TestSntpServerEngine}.
    */
   public static <E extends TestSntpServerEngine>
-      TestSntpServerWithNetwork<E, Network> wrapEngineWithRealNetwork(E engine) {
+      TestSntpServerWithNetwork<E, Network> wrapEngineWithRealNetwork(E serverEngine) {
     Network network = PlatformNetwork.instance();
-    SntpTestServer server = new SntpTestServer(engine);
+    SntpTestServer server = new SntpTestServer(serverEngine);
     InetSocketAddress serverAddress = server.getInetSocketAddress();
     return new TestSntpServerWithNetwork<>(
-        engine, network, () -> server.stop(), () -> serverAddress);
+        serverEngine, network, () -> server.stop(), () -> serverAddress);
   }
 
   private final E serverEngine;
   private final N network;
   private final Runnable stopAction;
   private final Callable<InetSocketAddress> serverSocketAddressProvider;
+  private BasicSntpClient.ClientConfig clientConfig;
 
   public TestSntpServerWithNetwork(
       E serverEngine,
@@ -83,6 +90,18 @@ public final class TestSntpServerWithNetwork<E extends TestSntpServerEngine, N e
     this.network = Objects.requireNonNull(network);
     this.stopAction = Objects.requireNonNull(stopAction);
     this.serverSocketAddressProvider = Objects.requireNonNull(serverSocketAddressProvider);
+    this.clientConfig =
+        new BasicSntpClient.ClientConfig() {
+          @Override
+          public ServerAddress serverAddress() {
+            return getServerAddress();
+          }
+
+          @Override
+          public Duration responseTimeout() {
+            return Duration.ofSeconds(5, 0);
+          }
+        };
   }
 
   public E getSntpServerEngine() {
@@ -110,27 +129,31 @@ public final class TestSntpServerWithNetwork<E extends TestSntpServerEngine, N e
     }
   }
 
-  /** Creates an {@link SntpConnector} that can be used to communicate with the test server. */
-  public SntpConnector createConnector(InstantSource clientInstantSource, Ticker clientTicker) {
-    BasicSntpClient.ClientConfig clientConfig =
-        new BasicSntpClient.ClientConfig() {
-          @Override
-          public ServerAddress serverAddress() {
-            return getServerAddress();
-          }
+  /**
+   * Creates an {@link SntpServiceConnectorImpl} that can be used to communicate with the test
+   * server engine.
+   */
+  public SntpServiceConnectorImpl createConnector(
+      InstantSource clientInstantSource, Ticker clientTicker) {
+    BasicSntpClient.ClientConfig clientConfig = getClientConfig();
+    Random random = new PredictableRandom();
+    Supplier<NtpMessage> requestFactory =
+        new SntpRequestFactory(clientInstantSource, random, 3, true);
+    SntpQueryOperation sntpQueryOperation =
+        new SntpQueryOperation(
+            NoOpLogger.instance(),
+            network,
+            clientInstantSource,
+            clientTicker,
+            clientConfig,
+            requestFactory);
+    ClusteredServiceOperation<Void, SuccessResult, FailureResult> networkServiceConnector =
+        new ClusteredServiceOperation<>(clientTicker, network, sntpQueryOperation);
+    return new SntpServiceConnectorImpl(clientConfig, networkServiceConnector);
+  }
 
-          @Override
-          public Duration responseTimeout() {
-            return Duration.ofSeconds(5, 0);
-          }
-        };
-    return new SntpConnectorImpl(
-        NoOpLogger.instance(),
-        network,
-        clientInstantSource,
-        clientTicker,
-        new NoOpSntpNetworkListener(),
-        clientConfig);
+  public BasicSntpClient.ClientConfig getClientConfig() {
+    return clientConfig;
   }
 
   public void stop() {

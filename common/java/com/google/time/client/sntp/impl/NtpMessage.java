@@ -15,14 +15,11 @@
  */
 package com.google.time.client.sntp.impl;
 
-import com.google.time.client.base.Instant;
-import com.google.time.client.base.InstantSource;
 import com.google.time.client.base.annotations.VisibleForTesting;
 import com.google.time.client.base.impl.Objects;
 import java.io.ByteArrayOutputStream;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
-import java.util.Random;
 
 /**
  * An NTP message. A minimal NTP message consists of the fixed fields ({@link NtpHeader}). In future
@@ -36,45 +33,6 @@ public final class NtpMessage {
   /** Creates an {@link NtpMessage} that just consists of the supplied {@link NtpHeader}. */
   public static NtpMessage create(NtpHeader header) {
     return new NtpMessage(header);
-  }
-
-  /** Creates a basic SNTP request message. */
-  public static NtpMessage createSntpRequest(
-      int version,
-      boolean clientDataMinimization,
-      Random random,
-      InstantSource clientInstantSource) {
-    NtpHeader.Builder requestHeaderBuilder =
-        NtpHeader.Builder.createEmpty()
-            .setVersionNumber(version)
-            .setMode(NtpHeader.NTP_MODE_CLIENT);
-
-    // Since it doesn't really matter what we send here (the server shouldn't use it for anything
-    // except round-tripping), the transmit timestamp can be different from the value actually
-    // used by the client.
-    Timestamp64 requestTransmitTimestamp;
-    if (clientDataMinimization) {
-      // As per: https://datatracker.ietf.org/doc/html/draft-ietf-ntp-data-minimization-04
-      // Using an entirely random timestamp is better than revealing client clock data.
-      long eraSeconds = random.nextInt() & 0xFFFF_FFFFL;
-      requestTransmitTimestamp = Timestamp64.fromComponents(eraSeconds, random.nextInt());
-    } else {
-      Instant requestTransmitInstant = clientInstantSource.instant();
-      requestTransmitTimestamp = Timestamp64.fromInstant(requestTransmitInstant);
-      if (clientInstantSource.getPrecision() <= InstantSource.PRECISION_MILLIS) {
-        // requestTransmitTimestamp is treated as a nonce, so randomize the sub-millis nanos to
-        // ensure it is less predictable. This introduces an error, but only up to 1 millis, e.g.
-        // requestTransmitTimestamp could now be in the future or in the past, but less than 1
-        // millis.
-        // The value is not used by the client again, and the server also shouldn't be using it for
-        // anything that affects the response we get (besides replaying it back to the client).
-        requestTransmitTimestamp = requestTransmitTimestamp.randomizeSubMillis(random);
-      }
-    }
-    requestHeaderBuilder.setTransmitTimestamp(requestTransmitTimestamp);
-    NtpHeader requestHeader = requestHeaderBuilder.build();
-    Builder requestBuilder = new Builder().setHeader(requestHeader);
-    return requestBuilder.build();
   }
 
   /**

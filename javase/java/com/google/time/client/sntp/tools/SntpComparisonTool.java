@@ -16,6 +16,9 @@
 
 package com.google.time.client.sntp.tools;
 
+import static com.google.time.client.sntp.SntpQueryResult.TYPE_RETRY_LATER;
+import static com.google.time.client.sntp.SntpQueryResult.TYPE_SUCCESS;
+
 import com.google.time.client.base.Duration;
 import com.google.time.client.base.Logger;
 import com.google.time.client.base.Network;
@@ -24,8 +27,8 @@ import com.google.time.client.base.ServerAddress;
 import com.google.time.client.base.impl.SystemStreamLogger;
 import com.google.time.client.sntp.BasicSntpClient;
 import com.google.time.client.sntp.BasicSntpClient.ClientConfig;
-import com.google.time.client.sntp.NtpServerNotReachableException;
-import com.google.time.client.sntp.SntpResult;
+import com.google.time.client.sntp.SntpQueryResult;
+import com.google.time.client.sntp.SntpTimeSignal;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -53,34 +56,35 @@ public final class SntpComparisonTool {
     List<ServerAddress> serverAddresses = parseServerAddresses(args);
     for (ServerAddress serverAddress : serverAddresses) {
       List<InetSocketAddress> expandedAddresses = expandAddress(logger, network, serverAddress);
-      List<SntpResult> results = new ArrayList<>();
+      List<SntpQueryResult> results = new ArrayList<>();
       for (InetSocketAddress expandedAddress : expandedAddresses) {
         ClientConfig clientConfig = createIpAddressConfig(expandedAddress, serverAddress.getPort());
 
         BasicSntpClient client =
             new BasicSntpClient.Builder().setClientConfig(clientConfig).setLogger(logger).build();
         try {
-          SntpResult sntpResult = client.requestInstant();
+          SntpQueryResult sntpQueryResult = client.executeQuery(null);
 
           if (logger.isLoggingFine()) {
-            logger.fine("SntpResult:" + sntpResult);
+            logger.fine("SntpResult:" + sntpQueryResult);
           }
-          results.add(sntpResult);
-        } catch (NtpServerNotReachableException e) {
-          logger.warning("Server not reachable at " + expandedAddress);
+          results.add(sntpQueryResult);
+        } catch (UnknownHostException e) {
+          // Unexpected: the name should already have been resolved.
+          logger.warning("Unexpected host lookup error", e);
         }
       }
 
       System.out.println(serverAddress + ":");
       printHeader();
-      for (SntpResult result : results) {
+      for (SntpQueryResult result : results) {
         printResult(result);
       }
     }
   }
 
   private static final String TABLE_TEMPLATE =
-      "|%20s|%20s|%4s|%15s|%8s|%7s|%14s|%14s|%13s|%14s|%14s|%30s|\n";
+      "|%20s|%20s|%4s|%15s|%7s|%7s|%14s|%14s|%13s|%14s|%14s|%30s|\n";
 
   private static void printHeader() {
     System.out.printf(
@@ -89,7 +93,7 @@ public final class SntpComparisonTool {
         "Client offset",
         "Ref",
         "Ref bytes",
-        "Versions",
+        "Version",
         "Stratum",
         "Root delay",
         "Root disp",
@@ -99,21 +103,45 @@ public final class SntpComparisonTool {
         "Reference time");
   }
 
-  private static void printResult(SntpResult result) {
+  private static void printResult(SntpQueryResult result) {
+    switch (result.getType()) {
+      case TYPE_SUCCESS:
+        printTimeSignal(result);
+        break;
+      case TYPE_RETRY_LATER:
+        Exception exception = result.getException();
+        StringBuilder builder = new StringBuilder();
+        builder.append(exception.getMessage());
+        builder.append("[");
+        for (Throwable suppressed : exception.getSuppressed()) {
+          builder.append(suppressed.getMessage());
+          builder.append(",");
+        }
+        builder.append("]");
+        System.out.println("== RETRY LATER: " + builder + " ==");
+        break;
+      default:
+        System.out.println("== Unknown type: " + result.getType() + "==");
+        break;
+    }
+  }
+
+  private static void printTimeSignal(SntpQueryResult result) {
+    SntpTimeSignal sntpTimeSignal = result.getTimeSignal();
     System.out.printf(
         TABLE_TEMPLATE,
-        result.getServerInetAddress().getHostAddress(),
-        result.getClientOffset(),
-        result.getReferenceIdentifierAsString(),
-        bytesToString(result.getReferenceIdentifier()),
-        result.getRequestVersion() + "/" + result.getResponseVersion(),
-        result.getStratum(),
-        result.getRootDelayDuration(),
-        result.getRootDispersionDuration(),
-        swallowException(result::getPollInterval),
-        result.getPrecisionExponent(),
-        result.getRoundTripDuration(),
-        result.getReferenceTimestampAsInstant());
+        sntpTimeSignal.getServerInetAddress().getHostAddress(),
+        sntpTimeSignal.getClientOffset(),
+        sntpTimeSignal.getReferenceIdentifierAsString(),
+        bytesToString(sntpTimeSignal.getReferenceIdentifier()),
+        sntpTimeSignal.getResponseVersion(),
+        sntpTimeSignal.getStratum(),
+        sntpTimeSignal.getRootDelayDuration(),
+        sntpTimeSignal.getRootDispersionDuration(),
+        swallowException(sntpTimeSignal::getPollInterval),
+        sntpTimeSignal.getPrecisionExponent(),
+        sntpTimeSignal.getRoundTripDuration(),
+        sntpTimeSignal.getReferenceTimestampAsInstant());
   }
 
   private static String swallowException(Callable<?> function) {

@@ -16,6 +16,9 @@
 
 package com.google.time.client.sntp;
 
+import com.google.time.client.base.Duration;
+import java.net.UnknownHostException;
+
 /**
  * A high-level API for obtaining an instant with metadata using SNTP. Implementations may provide
  * different behaviors around network fail-over and timeouts, security guarantees, consensus
@@ -24,10 +27,12 @@ package com.google.time.client.sntp;
 public interface SntpClient {
 
   /**
-   * Requests the current instant.
+   * Queries the current time from an NTP server using SNTP.
    *
-   * @return the result containing the current instant with metadata, never {@code null}
-   * @throws NtpServerNotReachableException if an instant cannot be obtained
+   * @param timeAllowed the time allowed or {@code null} for indefinite. The time allowed is
+   *     considered a guide and may be exceeded
+   * @return the result containing the current time from the server with metadata, or information
+   *     about the failure, never {@code null}
    */
-  SntpResult requestInstant() throws NtpServerNotReachableException;
+  SntpQueryResult executeQuery(Duration timeAllowed) throws UnknownHostException;
 }

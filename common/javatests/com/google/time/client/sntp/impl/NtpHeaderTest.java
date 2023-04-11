@@ -18,6 +18,7 @@ package com.google.time.client.sntp.impl;
 
 import static com.google.time.client.base.impl.DateTimeConstants.NANOS_PER_SECOND;
 import static com.google.time.client.base.testing.Bytes.bytes;
+import static com.google.time.client.sntp.impl.NtpHeader.FIXED_FIELDS_SIZE;
 import static com.google.time.client.sntp.impl.NtpHeader.LI_VN_MODE_OFFSET;
 import static com.google.time.client.sntp.impl.NtpHeader.ORIGINATE_TIME_OFFSET;
 import static com.google.time.client.sntp.impl.NtpHeader.POLL_OFFSET;
@@ -33,10 +34,12 @@ import static com.google.time.client.sntp.impl.SerializationUtils.read32Unsigned
 import static com.google.time.client.sntp.impl.SerializationUtils.readTimestamp64;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import com.google.time.client.base.Duration;
+import com.google.time.client.base.testing.MoreAsserts;
 import com.google.time.client.sntp.InvalidNtpValueException;
 import java.util.Arrays;
 import org.junit.Test;
@@ -126,7 +129,7 @@ public class NtpHeaderTest {
 
     // Check handling of bad binary representation.
     {
-      byte[] bytes = new byte[NtpHeader.FIXED_FIELDS_SIZE];
+      byte[] bytes = new byte[FIXED_FIELDS_SIZE];
       bytes[POLL_OFFSET] = (byte) 18;
       NtpHeader badValueheader = NtpHeader.fromBytes(bytes, 0);
       assertThrows(InvalidNtpValueException.class, badValueheader::getPollIntervalExponent);
@@ -260,6 +263,24 @@ public class NtpHeaderTest {
 
     // Check correct offset is used. The binary representation for timestamps is tested elsewhere.
     assertEquals(timestamp64, readTimestamp64(builderToBytes(headerBuilder), TRANSMIT_TIME_OFFSET));
+  }
+
+  @Test
+  public void equals() {
+    byte[] bytes1 = new byte[FIXED_FIELDS_SIZE];
+    bytes1[0] = 1;
+    NtpHeader ntpHeader1 = NtpHeader.fromBytes(bytes1, 0);
+    {
+      NtpHeader other = NtpHeader.fromBytes(bytes1, 0);
+      MoreAsserts.assertEqualityMethods(ntpHeader1, other);
+    }
+
+    {
+      byte[] bytes2 = new byte[FIXED_FIELDS_SIZE];
+      bytes2[0] = 2;
+      NtpHeader ntpHeader2 = NtpHeader.fromBytes(bytes2, 0);
+      assertNotEquals(ntpHeader1, ntpHeader2);
+    }
   }
 
   private static byte[] builderToBytes(NtpHeader.Builder headerBuilder) {
