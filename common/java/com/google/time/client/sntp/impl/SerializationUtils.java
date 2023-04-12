@@ -18,6 +18,7 @@ package com.google.time.client.sntp.impl;
 
 import static com.google.time.client.base.impl.DateTimeConstants.NANOS_PER_SECOND;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.time.client.base.Duration;
 import com.google.time.client.sntp.InvalidNtpValueException;
 import java.io.ByteArrayInputStream;
@@ -133,7 +134,6 @@ public class SerializationUtils {
   }
 
   /** Writes an unsigned 16-bit big endian number to the specified offset in the buffer. */
-  @SuppressWarnings("CheckReturnValue")
   public static void write16Unsigned(byte[] buffer, int offset, int value) {
     check16Unsigned(value);
     buffer[offset++] = (byte) (value >> 8);
@@ -144,6 +144,7 @@ public class SerializationUtils {
    * Throws an {@link IllegalArgumentException} if {@code value} is outside the supported range for
    * an unsigned 16-bit value.
    */
+  @CanIgnoreReturnValue
   public static int check16Unsigned(int value) {
     if (value < 0 || value > 0xFFFF) {
       throw new IllegalArgumentException(
@@ -296,6 +297,7 @@ public class SerializationUtils {
     return Duration.ofSeconds(seconds, 0);
   }
 
+  @CanIgnoreReturnValue
   static int checkReadValueInRange(int minValueInc, int maxValueInc, int value)
       throws InvalidNtpValueException {
     if (value < minValueInc || value > maxValueInc) {

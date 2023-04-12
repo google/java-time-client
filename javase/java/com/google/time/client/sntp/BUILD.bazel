@@ -9,6 +9,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//java/com/google/time/client/base",
+        "@maven//:com_google_errorprone_error_prone_annotations",
     ],
 )
 
