@@ -15,6 +15,7 @@
  */
 package com.google.time.client.sntp.impl;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.time.client.base.annotations.VisibleForTesting;
 import com.google.time.client.base.impl.Objects;
 import java.io.ByteArrayOutputStream;
@@ -115,6 +116,7 @@ public final class NtpMessage {
     }
 
     /** Sets the fixed fields header, must not be {@code null}. */
+    @CanIgnoreReturnValue
     public Builder setHeader(NtpHeader header) {
       this.header = Objects.requireNonNull(header);
       return this;

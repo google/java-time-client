@@ -16,6 +16,7 @@
 
 package com.google.time.client.sntp.impl;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.time.client.base.Duration;
 import com.google.time.client.base.annotations.VisibleForTesting;
 import com.google.time.client.base.impl.Objects;
@@ -366,6 +367,7 @@ public final class NtpHeader {
     }
 
     /** Sets the leap indicator. */
+    @CanIgnoreReturnValue
     public Builder setLeapIndicator(int leapIndicator) {
       checkArgument(leapIndicator >= 0 && leapIndicator <= 3);
       bytes[LI_VN_MODE_OFFSET] =
@@ -374,6 +376,7 @@ public final class NtpHeader {
     }
 
     /** Sets the protocol version number. */
+    @CanIgnoreReturnValue
     public Builder setVersionNumber(int versionNumber) {
       checkArgument(versionNumber >= 0 && versionNumber <= 7);
       bytes[LI_VN_MODE_OFFSET] =
@@ -382,6 +385,7 @@ public final class NtpHeader {
     }
 
     /** Sets the mode. */
+    @CanIgnoreReturnValue
     public Builder setMode(int mode) {
       checkArgument(mode >= 0 && mode <= 7);
       bytes[LI_VN_MODE_OFFSET] = (byte) ((bytes[LI_VN_MODE_OFFSET] & 0b11111000) | mode);
@@ -389,6 +393,7 @@ public final class NtpHeader {
     }
 
     /** Sets the stratum. */
+    @CanIgnoreReturnValue
     public Builder setStratum(int stratum) {
       checkArgument(stratum >= 0 && stratum <= 255);
       bytes[STRATUM_OFFSET] = (byte) stratum;
@@ -396,6 +401,7 @@ public final class NtpHeader {
     }
 
     /** Sets the poll interval exponent. */
+    @CanIgnoreReturnValue
     public Builder setPollIntervalExponent(int exponent) {
       checkArgument(
           MIN_POLL_INTERVAL_EXPONENT_VALUE <= exponent
@@ -405,6 +411,7 @@ public final class NtpHeader {
     }
 
     /** Sets the precision exponent value. */
+    @CanIgnoreReturnValue
     public Builder setPrecisionExponent(int precisionExponent) {
       if (precisionExponent >= 0 || precisionExponent < Byte.MIN_VALUE) {
         throw new IllegalArgumentException(Integer.toString(precisionExponent));
@@ -414,12 +421,14 @@ public final class NtpHeader {
     }
 
     /** Sets the root delay value as a Duration. The conversion from Duration can be lossy. */
+    @CanIgnoreReturnValue
     public Builder setRootDelayDuration(Duration rootDelay) {
       SerializationUtils.write32SignedFixedPointDuration(bytes, ROOT_DELAY_OFFSET, rootDelay);
       return this;
     }
 
     /** Sets the root delay value as raw bytes. */
+    @CanIgnoreReturnValue
     public Builder setRootDelay(byte[] bytes) {
       if (bytes.length != 4) {
         throw new IllegalArgumentException();
@@ -429,6 +438,7 @@ public final class NtpHeader {
     }
 
     /** Sets the root dispersion value. The conversion from Duration can be lossy. */
+    @CanIgnoreReturnValue
     public Builder setRootDispersionDuration(Duration rootDispersion) {
       SerializationUtils.write32UnsignedFixedPointDuration(
           bytes, ROOT_DISPERSION_OFFSET, rootDispersion);
@@ -436,6 +446,7 @@ public final class NtpHeader {
     }
 
     /** Sets the root dispersion value. */
+    @CanIgnoreReturnValue
     public Builder setRootDispersion(byte[] bytes) {
       if (bytes.length != 4) {
         throw new IllegalArgumentException();
@@ -454,6 +465,7 @@ public final class NtpHeader {
      *
      * @see #setReferenceIdentifier(byte[])
      */
+    @CanIgnoreReturnValue
     public Builder setReferenceIdentifierAsString(String referenceIdentifier) {
       SerializationUtils.writeAscii(
           bytes, REFERENCE_IDENTIFIER_OFFSET, REFERENCE_IDENTIFIER_LENGTH, referenceIdentifier);
@@ -469,6 +481,7 @@ public final class NtpHeader {
      *
      * @see #setReferenceIdentifierAsString(String)
      */
+    @CanIgnoreReturnValue
     public Builder setReferenceIdentifier(byte[] referenceIdentifierBytes) {
       if (referenceIdentifierBytes.length != REFERENCE_IDENTIFIER_LENGTH) {
         throw new IllegalArgumentException(
@@ -483,24 +496,28 @@ public final class NtpHeader {
     }
 
     /** Sets the "reference timestamp". */
+    @CanIgnoreReturnValue
     public Builder setReferenceTimestamp(Timestamp64 referenceTimestamp) {
       SerializationUtils.writeTimestamp64(bytes, REFERENCE_TIME_OFFSET, referenceTimestamp);
       return this;
     }
 
     /** Sets the "originate timestamp". */
+    @CanIgnoreReturnValue
     public Builder setOriginateTimestamp(Timestamp64 originateTimestamp) {
       SerializationUtils.writeTimestamp64(bytes, ORIGINATE_TIME_OFFSET, originateTimestamp);
       return this;
     }
 
     /** Sets the "receive timestamp". */
+    @CanIgnoreReturnValue
     public Builder setReceiveTimestamp(Timestamp64 receiveTimestamp) {
       SerializationUtils.writeTimestamp64(bytes, RECEIVE_TIME_OFFSET, receiveTimestamp);
       return this;
     }
 
     /** Sets the "transmit timestamp". */
+    @CanIgnoreReturnValue
     public Builder setTransmitTimestamp(Timestamp64 transmitTimestamp) {
       SerializationUtils.writeTimestamp64(bytes, TRANSMIT_TIME_OFFSET, transmitTimestamp);
       return this;
