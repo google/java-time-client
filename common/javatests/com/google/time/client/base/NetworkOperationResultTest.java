@@ -50,14 +50,21 @@ public class NetworkOperationResultTest {
   public void failure() throws Exception {
     InetSocketAddress address =
         new InetSocketAddress(InetAddress.getByAddress(new byte[] {1, 1, 1, 1}), 1234);
+    int failureIdentifier = 4321;
     Exception exception = new Exception();
-    assertThrows(NullPointerException.class, () -> NetworkOperationResult.failure(null, exception));
-    assertThrows(NullPointerException.class, () -> NetworkOperationResult.failure(address, null));
+    assertThrows(
+        NullPointerException.class,
+        () -> NetworkOperationResult.failure(null, failureIdentifier, exception));
+    assertThrows(
+        NullPointerException.class,
+        () -> NetworkOperationResult.failure(address, failureIdentifier, null));
 
-    NetworkOperationResult failure = NetworkOperationResult.failure(address, exception);
+    NetworkOperationResult failure =
+        NetworkOperationResult.failure(address, failureIdentifier, exception);
     assertEquals(address, failure.getSocketAddress());
     assertEquals(TYPE_FAILURE, failure.getType());
     assertEquals(exception, failure.getException());
+    assertEquals(failureIdentifier, failure.getFailureIdentifier());
   }
 
   @Test
@@ -87,17 +94,23 @@ public class NetworkOperationResultTest {
     assertNotEquals(
         NetworkOperationResult.success(address1), NetworkOperationResult.success(address2));
 
+    int failureIdentifier1 = 1111;
+    int failureIdentifier2 = 2222;
+
     Exception exception1 = new Exception("test1");
     Exception exception2 = new Exception("test2");
     assertEqualityMethods(
-        NetworkOperationResult.failure(address1, exception1),
-        NetworkOperationResult.failure(address1, exception1));
+        NetworkOperationResult.failure(address1, failureIdentifier1, exception1),
+        NetworkOperationResult.failure(address1, failureIdentifier1, exception1));
     assertNotEquals(
-        NetworkOperationResult.failure(address1, exception1),
-        NetworkOperationResult.failure(address1, exception2));
+        NetworkOperationResult.failure(address1, failureIdentifier1, exception1),
+        NetworkOperationResult.failure(address1, failureIdentifier2, exception1));
     assertNotEquals(
-        NetworkOperationResult.failure(address2, exception1),
-        NetworkOperationResult.failure(address1, exception1));
+        NetworkOperationResult.failure(address1, failureIdentifier1, exception1),
+        NetworkOperationResult.failure(address1, failureIdentifier1, exception2));
+    assertNotEquals(
+        NetworkOperationResult.failure(address2, failureIdentifier1, exception1),
+        NetworkOperationResult.failure(address1, failureIdentifier1, exception1));
 
     assertEqualityMethods(
         NetworkOperationResult.timeAllowedExceeded(address1),

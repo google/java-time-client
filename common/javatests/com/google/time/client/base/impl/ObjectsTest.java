@@ -55,4 +55,10 @@ public class ObjectsTest {
     assertFalse(Objects.equals(nonNull, null));
     assertFalse(Objects.equals(null, nonNull));
   }
+
+  @Test
+  public void testToString() {
+    assertEquals("null", Objects.toString(null));
+    assertEquals("foobar", Objects.toString("foobar"));
+  }
 }

@@ -16,11 +16,11 @@
 
 package com.google.time.client.sntp;
 
+import com.google.time.client.base.impl.Objects;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.Objects;
 
 /** The result of making an SNTP query. */
 public final class SntpQueryResult {

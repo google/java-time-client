@@ -49,27 +49,31 @@ public final class NetworkOperationResult {
 
   private final @Type int type;
 
+  private final int failureIdentifier;
   private final Exception exception;
 
   /** Creates a {@link #TYPE_SUCCESS} instance. */
   public static NetworkOperationResult success(InetSocketAddress socketAddress) {
-    return new NetworkOperationResult(socketAddress, TYPE_SUCCESS, null);
+    return new NetworkOperationResult(socketAddress, TYPE_SUCCESS, -1, null);
   }
 
   /** Creates a {@link #TYPE_TIME_ALLOWED_EXCEEDED} instance. */
   public static NetworkOperationResult timeAllowedExceeded(InetSocketAddress socketAddress) {
-    return new NetworkOperationResult(socketAddress, TYPE_TIME_ALLOWED_EXCEEDED, null);
+    return new NetworkOperationResult(socketAddress, TYPE_TIME_ALLOWED_EXCEEDED, -2, null);
   }
 
   /** Creates a {@link #TYPE_FAILURE} instance. */
-  public static NetworkOperationResult failure(InetSocketAddress socketAddress, Exception e) {
-    return new NetworkOperationResult(socketAddress, TYPE_FAILURE, Objects.requireNonNull(e));
+  public static NetworkOperationResult failure(
+      InetSocketAddress socketAddress, int failureIdentifier, Exception e) {
+    return new NetworkOperationResult(
+        socketAddress, TYPE_FAILURE, failureIdentifier, Objects.requireNonNull(e));
   }
 
   private NetworkOperationResult(
-      InetSocketAddress socketAddress, @Type int type, Exception exception) {
+      InetSocketAddress socketAddress, @Type int type, int failureIdentifier, Exception exception) {
     this.socketAddress = Objects.requireNonNull(socketAddress);
     this.type = type;
+    this.failureIdentifier = failureIdentifier;
     this.exception = exception;
   }
 
@@ -81,6 +85,14 @@ public final class NetworkOperationResult {
   /** Returns the return type of the operation. */
   public @Type int getType() {
     return type;
+  }
+
+  /**
+   * Returns an identifier for the failure when {@link #getType()} is {@link #TYPE_FAILURE}.
+   * Otherwise, undefined.
+   */
+  public int getFailureIdentifier() {
+    return failureIdentifier;
   }
 
   /**
@@ -102,12 +114,13 @@ public final class NetworkOperationResult {
     NetworkOperationResult that = (NetworkOperationResult) o;
     return type == that.type
         && socketAddress.equals(that.socketAddress)
-        && java.util.Objects.equals(exception, that.exception);
+        && failureIdentifier == that.failureIdentifier
+        && Objects.equals(exception, that.exception);
   }
 
   @Override
   public int hashCode() {
-    return java.util.Objects.hash(socketAddress, type, exception);
+    return Objects.hash(socketAddress, type, failureIdentifier, exception);
   }
 
   @Override
@@ -117,6 +130,8 @@ public final class NetworkOperationResult {
         + socketAddress
         + ", type="
         + type
+        + ", failureIdentifier="
+        + failureIdentifier
         + ", exception="
         + exception
         + '}';

@@ -34,32 +34,39 @@ public class SntpQueryOperationFailureResultTest {
   public void equals() throws Exception {
     InetSocketAddress address1 = createSocketAddress(1);
     NtpMessage message1 = createNtpMessage(1);
+    int failureIdentifier1 = 1;
     Exception exception1 = createException(1);
     SntpQueryOperation.FailureResult one =
-        new SntpQueryOperation.FailureResult(address1, message1, exception1);
+        new SntpQueryOperation.FailureResult(address1, message1, failureIdentifier1, exception1);
 
     // equals(), hashcode(), etc.
     {
       SntpQueryOperation.FailureResult other =
-          new SntpQueryOperation.FailureResult(address1, message1, exception1);
+          new SntpQueryOperation.FailureResult(address1, message1, failureIdentifier1, exception1);
       MoreAsserts.assertEqualityMethods(one, other);
     }
     {
       InetSocketAddress address2 = createSocketAddress(2);
       SntpQueryOperation.FailureResult other =
-          new SntpQueryOperation.FailureResult(address2, message1, exception1);
+          new SntpQueryOperation.FailureResult(address2, message1, failureIdentifier1, exception1);
       assertNotEquals(one, other);
     }
     {
       NtpMessage message2 = createNtpMessage(2);
       SntpQueryOperation.FailureResult other =
-          new SntpQueryOperation.FailureResult(address1, message2, exception1);
+          new SntpQueryOperation.FailureResult(address1, message2, failureIdentifier1, exception1);
+      assertNotEquals(one, other);
+    }
+    {
+      int failureIdentifier2 = 2;
+      SntpQueryOperation.FailureResult other =
+          new SntpQueryOperation.FailureResult(address1, message1, failureIdentifier2, exception1);
       assertNotEquals(one, other);
     }
     {
       Exception exception2 = createException(2);
       SntpQueryOperation.FailureResult other =
-          new SntpQueryOperation.FailureResult(address1, message1, exception2);
+          new SntpQueryOperation.FailureResult(address1, message1, failureIdentifier1, exception2);
       assertNotEquals(one, other);
     }
   }

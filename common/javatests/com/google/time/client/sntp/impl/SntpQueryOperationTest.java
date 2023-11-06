@@ -86,18 +86,22 @@ public class SntpQueryOperationTest {
 
   @Test
   public void execute_networkIssues_failToSend() throws Exception {
-    testNetworkIssues(FakeNetwork.FAILURE_MODE_SEND);
+    testNetworkIssues(
+        FakeNetwork.FAILURE_MODE_SEND, FailureResult.FAILURE_IDENTIFIER_SOCKET_SEND_EXCEPTION);
   }
 
   @Test
   public void execute_networkIssues_failToReceive() throws Exception {
-    testNetworkIssues(FakeNetwork.FAILURE_MODE_RECEIVE);
+    testNetworkIssues(
+        FakeNetwork.FAILURE_MODE_RECEIVE,
+        FailureResult.FAILURE_IDENTIFIER_SOCKET_RECEIVE_EXCEPTION);
   }
 
-  private void testNetworkIssues(int failureMode) throws Exception {
+  private void testNetworkIssues(int failureMode, int expectedFailureIdentifier) throws Exception {
     fakeNetwork.setFailureMode(failureMode);
 
-    testExecuteReturnsFailure(NtpServerNotReachableException.class, false);
+    testExecuteReturnsFailure(
+        expectedFailureIdentifier, NtpServerNotReachableException.class, false);
   }
 
   /**
@@ -166,7 +170,10 @@ public class SntpQueryOperationTest {
     FakeSntpServerEngine fakeSntpServerEngine = testSntpServerWithNetwork.getSntpServerEngine();
     fakeSntpServerEngine.setQuirkMode(FakeSntpServerEngine.QUIRK_MODE_NON_MATCHING_ORIGINATE_TIME);
 
-    testExecuteReturnsFailure(NtpProtocolException.class, true);
+    testExecuteReturnsFailure(
+        FailureResult.FAILURE_IDENTIFIER_MISMATCHED_ORIGINATE_TIMESTAMP,
+        NtpProtocolException.class,
+        true);
   }
 
   @Test
@@ -177,25 +184,29 @@ public class SntpQueryOperationTest {
         responseTemplate.getHeader().toBuilder().setMode(NtpHeader.NTP_MODE_BROADCAST).build();
     fakeSntpServerEngine.setLastResponseTemplate(NtpMessage.create(responseTemplateHeader));
 
-    testExecuteReturnsFailure(NtpProtocolException.class, true);
+    testExecuteReturnsFailure(
+        FailureResult.FAILURE_IDENTIFIER_BAD_SERVER_MODE, NtpProtocolException.class, true);
   }
 
   @Test
   public void execute_badServer_stratumZeroUnknownCode() throws Exception {
-    testStratumZeroKissCode("JUNK", true);
+    testStratumZeroKissCode("JUNK", true, FailureResult.FAILURE_IDENTIFIER_UNKNOWN_KISS_CODE);
   }
 
   @Test
   public void execute_badServer_stratumZeroDeny() throws Exception {
-    testStratumZeroKissCode(NtpHeader.KISS_CODE_DENY, true);
+    testStratumZeroKissCode(
+        NtpHeader.KISS_CODE_DENY, true, FailureResult.FAILURE_IDENTIFIER_UNEXPECTED_KISS_CODE1);
   }
 
   @Test
   public void execute_badServer_stratumZeroInit() throws Exception {
-    testStratumZeroKissCode(NtpHeader.KISS_CODE_INIT, false);
+    testStratumZeroKissCode(
+        NtpHeader.KISS_CODE_INIT, false, FailureResult.FAILURE_IDENTIFIER_UNEXPECTED_KISS_CODE2);
   }
 
-  private void testStratumZeroKissCode(String kissCode, boolean expectHaltingFailure)
+  private void testStratumZeroKissCode(
+      String kissCode, boolean expectHaltingFailure, int expectedFailureIdentifier)
       throws Exception {
     FakeSntpServerEngine fakeSntpServerEngine = testSntpServerWithNetwork.getSntpServerEngine();
     NtpMessage responseTemplate = fakeSntpServerEngine.getLastResponseTemplate();
@@ -206,11 +217,14 @@ public class SntpQueryOperationTest {
             .build();
     fakeSntpServerEngine.setLastResponseTemplate(NtpMessage.create(responseTemplateHeader));
 
-    testExecuteReturnsFailure(NtpProtocolException.class, expectHaltingFailure);
+    testExecuteReturnsFailure(
+        expectedFailureIdentifier, NtpProtocolException.class, expectHaltingFailure);
   }
 
   private void testExecuteReturnsFailure(
-      Class<? extends Exception> expectedExceptionClass, boolean expectHaltingFailure)
+      int expectedFailureIdentifier,
+      Class<? extends Exception> expectedExceptionClass,
+      boolean expectHaltingFailure)
       throws Exception {
     NtpMessage cannedRequestMessage = requestFactory.get();
     SntpQueryOperation operation =
@@ -230,12 +244,18 @@ public class SntpQueryOperationTest {
         operation.execute(unusedServerName, serverAddress, unusedParameter, timeAllowed);
 
     assertResultIsFailure(
-        expectedExceptionClass, expectHaltingFailure, cannedRequestMessage, serverAddress, result);
+        expectedFailureIdentifier,
+        expectedExceptionClass,
+        expectHaltingFailure,
+        cannedRequestMessage,
+        serverAddress,
+        result);
 
     assertNetworkSocketCreated(testSntpServerWithNetwork.getClientConfig().responseTimeout());
   }
 
   private void assertResultIsFailure(
+      int expectedFailureIdentifier,
       Class<? extends Exception> expectedExceptionClass,
       boolean expectHaltingFailure,
       NtpMessage expectedRequestMessage,
@@ -250,6 +270,7 @@ public class SntpQueryOperationTest {
     assertEquals(
         new InetSocketAddress(expectedServerAddress, clientConfig.serverAddress().getPort()),
         failureResult.serverSocketAddress);
+    assertEquals(expectedFailureIdentifier, failureResult.failureIdentifier);
     assertEquals(expectedExceptionClass, failureResult.failureException.getClass());
   }
 
@@ -258,7 +279,8 @@ public class SntpQueryOperationTest {
     FakeSntpServerEngine fakeSntpServerEngine = testSntpServerWithNetwork.getSntpServerEngine();
     fakeSntpServerEngine.setQuirkMode(FakeSntpServerEngine.QUIRK_MODE_ZERO_TRANSMIT_TIMESTAMP);
 
-    testExecuteReturnsFailure(NtpProtocolException.class, true);
+    testExecuteReturnsFailure(
+        FailureResult.FAILURE_IDENTIFIER_ZERO_TRANSMIT_TIMESTAMP, NtpProtocolException.class, true);
   }
 
   @Test
@@ -271,7 +293,8 @@ public class SntpQueryOperationTest {
             .build();
     fakeSntpServerEngine.setLastResponseTemplate(NtpMessage.create(responseTemplateHeader));
 
-    testExecuteReturnsFailure(NtpProtocolException.class, false);
+    testExecuteReturnsFailure(
+        FailureResult.FAILURE_IDENTIFIER_UNSYNCHRONIZED_SERVER, NtpProtocolException.class, false);
   }
 
   @Test
@@ -282,7 +305,8 @@ public class SntpQueryOperationTest {
         responseTemplate.getHeader().toBuilder().setStratum(16).build();
     fakeSntpServerEngine.setLastResponseTemplate(NtpMessage.create(responseTemplateHeader));
 
-    testExecuteReturnsFailure(NtpProtocolException.class, false);
+    testExecuteReturnsFailure(
+        FailureResult.FAILURE_IDENTIFIER_UNTRUSTED_STRATUM, NtpProtocolException.class, false);
   }
 
   @Test
@@ -293,7 +317,10 @@ public class SntpQueryOperationTest {
         responseTemplate.getHeader().toBuilder().setReferenceTimestamp(Timestamp64.ZERO).build();
     fakeSntpServerEngine.setLastResponseTemplate(NtpMessage.create(responseTemplateHeader));
 
-    testExecuteReturnsFailure(NtpProtocolException.class, false);
+    testExecuteReturnsFailure(
+        FailureResult.FAILURE_IDENTIFIER_REFERENCE_TIMESTAMP_ZERO,
+        NtpProtocolException.class,
+        false);
   }
 
   @Test
