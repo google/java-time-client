@@ -95,7 +95,7 @@ public final class NtpMessage {
 
   @Override
   public int hashCode() {
-    return java.util.Objects.hash(header);
+    return Objects.hash(header);
   }
 
   @Override

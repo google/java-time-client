@@ -102,12 +102,12 @@ public final class NetworkOperationResult {
     NetworkOperationResult that = (NetworkOperationResult) o;
     return type == that.type
         && socketAddress.equals(that.socketAddress)
-        && java.util.Objects.equals(exception, that.exception);
+        && Objects.equals(exception, that.exception);
   }
 
   @Override
   public int hashCode() {
-    return java.util.Objects.hash(socketAddress, type, exception);
+    return Objects.hash(socketAddress, type, exception);
   }
 
   @Override

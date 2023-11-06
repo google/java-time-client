@@ -19,6 +19,7 @@ import static com.google.time.client.sntp.impl.NtpDateTimeUtils.fractionBitsToNa
 import static com.google.time.client.sntp.impl.NtpDateTimeUtils.nanosToFractionBits;
 
 import com.google.time.client.base.Duration;
+import com.google.time.client.base.impl.Objects;
 
 /**
  * A type similar to {@link Timestamp64} but used when calculating the difference between two
@@ -113,7 +114,7 @@ public final class Duration64 {
 
   @Override
   public int hashCode() {
-    return java.util.Objects.hash(bits);
+    return Objects.hash(bits);
   }
 
   @Override

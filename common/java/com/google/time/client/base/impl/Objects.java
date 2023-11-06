@@ -56,4 +56,12 @@ public final class Objects {
   public static boolean equals(Object one, Object two) {
     return one == two || (one != null && one.equals(two));
   }
+
+  /**
+   * Returns the result of calling {@link Object#toString()} or "null" if {@code objectOrNull} is
+   * {@code null}.
+   */
+  public static String toString(Object objectOrNull) {
+    return objectOrNull == null ? "null" : objectOrNull.toString();
+  }
 }

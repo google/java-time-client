@@ -24,6 +24,7 @@ import com.google.time.client.base.Logger;
 import com.google.time.client.base.Network;
 import com.google.time.client.base.PlatformNetwork;
 import com.google.time.client.base.ServerAddress;
+import com.google.time.client.base.impl.Objects;
 import com.google.time.client.base.impl.SystemStreamLogger;
 import com.google.time.client.sntp.BasicSntpClient;
 import com.google.time.client.sntp.BasicSntpClient.ClientConfig;
@@ -35,7 +36,6 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.Callable;
 
 /** A simple command for reading the time from one or more NTP servers. */

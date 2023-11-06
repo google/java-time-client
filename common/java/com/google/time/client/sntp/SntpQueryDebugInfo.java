@@ -16,10 +16,10 @@
 package com.google.time.client.sntp;
 
 import com.google.time.client.base.NetworkOperationResult;
+import com.google.time.client.base.impl.Objects;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Information about a SNTP query that could be useful for debugging, metrics and alerting about

@@ -53,7 +53,7 @@ public final class ServerAddress {
 
   @Override
   public int hashCode() {
-    return java.util.Objects.hash(name, port);
+    return Objects.hash(name, port);
   }
 
   @Override

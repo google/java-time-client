@@ -423,7 +423,7 @@ public final class SntpQueryOperation
 
     @Override
     public int hashCode() {
-      return java.util.Objects.hash(
+      return Objects.hash(
           serverSocketAddress,
           instantSource,
           requestInstant,
@@ -487,7 +487,7 @@ public final class SntpQueryOperation
 
     @Override
     public int hashCode() {
-      return java.util.Objects.hash(serverSocketAddress, request, failureException);
+      return Objects.hash(serverSocketAddress, request, failureIdentifier, failureException);
     }
 
     @Override

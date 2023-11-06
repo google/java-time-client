@@ -196,14 +196,14 @@ public final class ClusteredServiceOperation<R, S, T> {
       ClusteredServiceResult<?, ?> that = (ClusteredServiceResult<?, ?>) o;
       return type == that.type
           && halted == that.halted
-          && java.util.Objects.equals(inetAddresses, that.inetAddresses)
-          && java.util.Objects.equals(successOpResult, that.successOpResult)
-          && java.util.Objects.equals(failureOpResults, that.failureOpResults);
+          && Objects.equals(inetAddresses, that.inetAddresses)
+          && Objects.equals(successOpResult, that.successOpResult)
+          && Objects.equals(failureOpResults, that.failureOpResults);
     }
 
     @Override
     public int hashCode() {
-      return java.util.Objects.hash(type, successOpResult, failureOpResults, halted, inetAddresses);
+      return Objects.hash(type, successOpResult, failureOpResults, halted, inetAddresses);
     }
 
     @Override
@@ -460,13 +460,13 @@ public final class ClusteredServiceOperation<R, S, T> {
         ServiceResult<?, ?> that = (ServiceResult<?, ?>) o;
         return type == that.type
             && inetAddress.equals(that.inetAddress)
-            && java.util.Objects.equals(successValue, that.successValue)
-            && java.util.Objects.equals(failureValue, that.failureValue);
+            && Objects.equals(successValue, that.successValue)
+            && Objects.equals(failureValue, that.failureValue);
       }
 
       @Override
       public int hashCode() {
-        return java.util.Objects.hash(inetAddress, type, successValue, failureValue);
+        return Objects.hash(inetAddress, type, successValue, failureValue);
       }
 
       @Override
