@@ -50,15 +50,16 @@ public class SntpQueryDebugInfoTest {
     List<InetAddress> addresses = Arrays.asList(address1, address2, address3);
 
     SntpQueryDebugInfo instance = new SntpQueryDebugInfo(addresses);
+    int failureIdentifier = 1234;
     NetworkOperationResult operation1 =
         NetworkOperationResult.failure(
-            new InetSocketAddress(address1, 123), new Exception("test1"));
+            new InetSocketAddress(address1, 123), failureIdentifier, new Exception("test1"));
     NetworkOperationResult operation2 =
         NetworkOperationResult.failure(
-            new InetSocketAddress(address2, 123), new Exception("test2"));
+            new InetSocketAddress(address2, 123), failureIdentifier, new Exception("test2"));
     NetworkOperationResult operation3 =
         NetworkOperationResult.failure(
-            new InetSocketAddress(address3, 123), new Exception("test3"));
+            new InetSocketAddress(address3, 123), failureIdentifier, new Exception("test3"));
 
     assertThrows(
         IllegalArgumentException.class, () -> instance.addSntpQueryOperationResults(operation2));
@@ -83,8 +84,10 @@ public class SntpQueryDebugInfoTest {
     List<InetAddress> addresses = Arrays.asList(address1, address2, address3);
 
     SntpQueryDebugInfo one = new SntpQueryDebugInfo(addresses);
+    int failureIdentifier = 1234;
     NetworkOperationResult operation1 =
-        NetworkOperationResult.failure(new InetSocketAddress(address1, 123), new Exception("test"));
+        NetworkOperationResult.failure(
+            new InetSocketAddress(address1, 123), failureIdentifier, new Exception("test"));
     NetworkOperationResult operation2 =
         NetworkOperationResult.success(new InetSocketAddress(address2, 123));
     one.addSntpQueryOperationResults(operation1);

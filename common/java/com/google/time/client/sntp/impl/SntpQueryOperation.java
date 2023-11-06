@@ -15,6 +15,22 @@
  */
 package com.google.time.client.sntp.impl;
 
+import static com.google.time.client.sntp.impl.SntpQueryOperation.FailureResult.FAILURE_IDENTIFIER_BAD_SERVER_MODE;
+import static com.google.time.client.sntp.impl.SntpQueryOperation.FailureResult.FAILURE_IDENTIFIER_MISMATCHED_ORIGINATE_TIMESTAMP;
+import static com.google.time.client.sntp.impl.SntpQueryOperation.FailureResult.FAILURE_IDENTIFIER_REFERENCE_TIMESTAMP_ZERO;
+import static com.google.time.client.sntp.impl.SntpQueryOperation.FailureResult.FAILURE_IDENTIFIER_SOCKET_INIT_EXCEPTION;
+import static com.google.time.client.sntp.impl.SntpQueryOperation.FailureResult.FAILURE_IDENTIFIER_SOCKET_RECEIVE_EXCEPTION;
+import static com.google.time.client.sntp.impl.SntpQueryOperation.FailureResult.FAILURE_IDENTIFIER_SOCKET_RECEIVE_TIMEOUT;
+import static com.google.time.client.sntp.impl.SntpQueryOperation.FailureResult.FAILURE_IDENTIFIER_SOCKET_SEND_EXCEPTION;
+import static com.google.time.client.sntp.impl.SntpQueryOperation.FailureResult.FAILURE_IDENTIFIER_UNEXPECTED_KISS_CODE1;
+import static com.google.time.client.sntp.impl.SntpQueryOperation.FailureResult.FAILURE_IDENTIFIER_UNEXPECTED_KISS_CODE2;
+import static com.google.time.client.sntp.impl.SntpQueryOperation.FailureResult.FAILURE_IDENTIFIER_UNEXPECTED_PACKET_RECEIVED;
+import static com.google.time.client.sntp.impl.SntpQueryOperation.FailureResult.FAILURE_IDENTIFIER_UNKNOWN_KISS_CODE;
+import static com.google.time.client.sntp.impl.SntpQueryOperation.FailureResult.FAILURE_IDENTIFIER_UNSYNCHRONIZED_SERVER;
+import static com.google.time.client.sntp.impl.SntpQueryOperation.FailureResult.FAILURE_IDENTIFIER_UNTRUSTED_STRATUM;
+import static com.google.time.client.sntp.impl.SntpQueryOperation.FailureResult.FAILURE_IDENTIFIER_ZERO_TRANSMIT_TIMESTAMP;
+import static com.google.time.client.sntp.impl.SntpQueryOperation.FailureResult.FailureIdentifier;
+
 import com.google.time.client.base.Duration;
 import com.google.time.client.base.Instant;
 import com.google.time.client.base.InstantSource;
@@ -31,6 +47,10 @@ import com.google.time.client.sntp.NtpServerNotReachableException;
 import com.google.time.client.sntp.impl.SntpQueryOperation.FailureResult;
 import com.google.time.client.sntp.impl.SntpQueryOperation.SuccessResult;
 import java.io.IOException;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -106,6 +126,7 @@ public final class SntpQueryOperation
       // Service-level failure, expected to be shared by all servers in a cluster
       return createHaltingProtocolFailureResult(
           request,
+          FAILURE_IDENTIFIER_MISMATCHED_ORIGINATE_TIMESTAMP,
           inetAddress,
           port,
           "Received originateTimestamp="
@@ -124,7 +145,11 @@ public final class SntpQueryOperation
     if (responseHeader.getMode() != NtpHeader.NTP_MODE_SERVER) {
       // Service-level failure, expected to be shared by all servers in a cluster
       return createHaltingProtocolFailureResult(
-          request, inetAddress, port, "untrusted mode: " + responseHeader.getMode());
+          request,
+          FAILURE_IDENTIFIER_BAD_SERVER_MODE,
+          inetAddress,
+          port,
+          "untrusted mode: " + responseHeader.getMode());
     }
 
     // RFC 4330 / 5.  SNTP Client Operations: Suggested check 4
@@ -154,18 +179,27 @@ public final class SntpQueryOperation
           {
             // Service-level failures, expected to be shared by all servers in a cluster
             return createHaltingProtocolFailureResult(
-                request, inetAddress, port, "Server returned recognized KISS code=" + kissCode);
+                request,
+                FAILURE_IDENTIFIER_UNEXPECTED_KISS_CODE1,
+                inetAddress,
+                port,
+                "Server returned recognized KISS code=" + kissCode);
           }
         case NtpHeader.KISS_CODE_INIT:
         case NtpHeader.KISS_CODE_STEP:
           {
             return createNonHaltingProtocolFailureResult(
-                request, inetAddress, port, "Server returned an ignorable KISS code=" + kissCode);
+                request,
+                FAILURE_IDENTIFIER_UNEXPECTED_KISS_CODE2,
+                inetAddress,
+                port,
+                "Server returned an ignorable KISS code=" + kissCode);
           }
         default:
           {
             return createHaltingProtocolFailureResult(
                 request,
+                FAILURE_IDENTIFIER_UNKNOWN_KISS_CODE,
                 inetAddress,
                 port,
                 "Stratum 0 response received with unknown KISS code=" + kissCode);
@@ -176,7 +210,11 @@ public final class SntpQueryOperation
     // RFC 4330 / 5.  SNTP Client Operations: Suggested check 4
     if (responseHeader.getTransmitTimestamp().equals(Timestamp64.ZERO)) {
       return createHaltingProtocolFailureResult(
-          request, inetAddress, port, "Response has zero transmit timestamp");
+          request,
+          FAILURE_IDENTIFIER_ZERO_TRANSMIT_TIMESTAMP,
+          inetAddress,
+          port,
+          "Response has zero transmit timestamp");
     }
 
     // RFC 4330 / 5.  SNTP Client Operations: Suggested check 5 is not implemented
@@ -188,18 +226,30 @@ public final class SntpQueryOperation
     // unacceptable state.
     if (responseHeader.getLeapIndicator() == NtpHeader.NTP_LEAP_NOSYNC) {
       return createNonHaltingProtocolFailureResult(
-          request, inetAddress, port, "Unsynchronized server");
+          request,
+          FAILURE_IDENTIFIER_UNSYNCHRONIZED_SERVER,
+          inetAddress,
+          port,
+          "Unsynchronized server");
     }
 
     // RFC 4330 / 5.  SNTP Client Operations: The table suggests the max is 15.
     if (stratum > NtpHeader.NTP_STRATUM_MAX) {
       return createNonHaltingProtocolFailureResult(
-          request, inetAddress, port, "untrusted stratum: " + stratum);
+          request,
+          FAILURE_IDENTIFIER_UNTRUSTED_STRATUM,
+          inetAddress,
+          port,
+          "untrusted stratum: " + stratum);
     }
 
     if (responseHeader.getReferenceTimestamp().equals(Timestamp64.ZERO)) {
       return createNonHaltingProtocolFailureResult(
-          request, inetAddress, port, "zero reference timestamp");
+          request,
+          FAILURE_IDENTIFIER_REFERENCE_TIMESTAMP_ZERO,
+          inetAddress,
+          port,
+          "zero reference timestamp");
     }
 
     // The SNTP response passed all the validation checks.
@@ -207,30 +257,46 @@ public final class SntpQueryOperation
   }
 
   private static ServiceResult<SuccessResult, FailureResult> createNonHaltingFailureResult(
-      NtpMessage request, InetSocketAddress serverSocketAddress, Exception exception) {
-    FailureResult failureValue = new FailureResult(serverSocketAddress, request, exception);
-    return ServiceResult.failure(serverSocketAddress.getAddress(), failureValue, false);
+      NtpMessage request,
+      InetSocketAddress serverSocketAddress,
+      @FailureIdentifier int failureIdentifier,
+      Exception exception) {
+    FailureResult failureResult =
+        new FailureResult(serverSocketAddress, request, failureIdentifier, exception);
+    return ServiceResult.failure(serverSocketAddress.getAddress(), failureResult, false);
   }
 
   private static ServiceResult<SuccessResult, FailureResult> createNonHaltingProtocolFailureResult(
-      NtpMessage request, InetAddress inetAddress, int port, String message) {
+      NtpMessage request,
+      @FailureIdentifier int failureIdentifier,
+      InetAddress inetAddress,
+      int port,
+      String message) {
     Exception e = new NtpProtocolException(message);
-    return createNonHaltingFailureResult(request, new InetSocketAddress(inetAddress, port), e);
+    return createNonHaltingFailureResult(
+        request, new InetSocketAddress(inetAddress, port), failureIdentifier, e);
   }
 
   private static ServiceResult<SuccessResult, FailureResult> createHaltingFailureResult(
-      NtpMessage request, InetSocketAddress serverSocketAddress, Exception exception) {
-    FailureResult failureValue = new FailureResult(serverSocketAddress, request, exception);
-    return ServiceResult.failure(serverSocketAddress.getAddress(), failureValue, true);
+      NtpMessage request,
+      InetSocketAddress serverSocketAddress,
+      @FailureIdentifier int failureIdentifier,
+      Exception exception) {
+    FailureResult failureResult =
+        new FailureResult(serverSocketAddress, request, failureIdentifier, exception);
+    return ServiceResult.failure(serverSocketAddress.getAddress(), failureResult, true);
   }
 
   private static ServiceResult<SuccessResult, FailureResult> createHaltingProtocolFailureResult(
-      NtpMessage request, InetAddress inetAddress, int port, String message) {
+      NtpMessage request,
+      @FailureIdentifier int failureIdentifier,
+      InetAddress inetAddress,
+      int port,
+      String message) {
     Exception e = new NtpProtocolException(message);
-    return ServiceResult.failure(
-        inetAddress,
-        new FailureResult(new InetSocketAddress(inetAddress, port), request, e),
-        /*halt=*/ true);
+    FailureResult failureValue =
+        new FailureResult(new InetSocketAddress(inetAddress, port), request, failureIdentifier, e);
+    return ServiceResult.failure(inetAddress, failureValue, /* halt= */ true);
   }
 
   private ServiceResult<SuccessResult, FailureResult> executeSntpQuery(
@@ -289,7 +355,8 @@ public final class SntpQueryOperation
                       + ":"
                       + requestPacket.getPort(),
                   e);
-          return createNonHaltingFailureResult(request, serverSocketAddress, e2);
+          return createNonHaltingFailureResult(
+              request, serverSocketAddress, FAILURE_IDENTIFIER_SOCKET_SEND_EXCEPTION, e2);
         }
 
         // Read the response, or timeout.
@@ -306,11 +373,13 @@ public final class SntpQueryOperation
                         + ":"
                         + requestPacket.getPort(),
                     e);
-            return createNonHaltingFailureResult(request, serverSocketAddress, e2);
+            return createNonHaltingFailureResult(
+                request, serverSocketAddress, FAILURE_IDENTIFIER_SOCKET_RECEIVE_TIMEOUT, e2);
           }
         } catch (IOException e) {
           Exception e2 = new NtpServerNotReachableException("Unable to receive NTP response", e);
-          return createNonHaltingFailureResult(request, serverSocketAddress, e2);
+          return createNonHaltingFailureResult(
+              request, serverSocketAddress, FAILURE_IDENTIFIER_SOCKET_RECEIVE_EXCEPTION, e2);
         }
 
         // Capture T4 / [client]responseTimestamp according to the client's Ticker
@@ -319,7 +388,8 @@ public final class SntpQueryOperation
     } catch (IOException e) {
       // These indicate an inability to create or configure the outgoing socket.
       Exception e2 = new NtpServerNotReachableException("Unable to create/configure UdpSocket", e);
-      return createNonHaltingFailureResult(request, serverSocketAddress, e2);
+      return createNonHaltingFailureResult(
+          request, serverSocketAddress, FAILURE_IDENTIFIER_SOCKET_INIT_EXCEPTION, e2);
     }
 
     // RFC 4330 / 5.  SNTP Client Operations: Suggested checks 1 & 2.
@@ -337,7 +407,8 @@ public final class SntpQueryOperation
                   + responsePacket.getAddress()
                   + ":"
                   + responsePacket.getPort());
-      return createHaltingFailureResult(request, serverSocketAddress, e);
+      return createHaltingFailureResult(
+          request, serverSocketAddress, FAILURE_IDENTIFIER_UNEXPECTED_PACKET_RECEIVED, e);
     }
 
     NtpMessage response = NtpMessage.fromDatagramPacket(responsePacket);
@@ -455,19 +526,50 @@ public final class SntpQueryOperation
   /** A result struct for an unsuccessful SNTP interaction with an NTP server. */
   public static final class FailureResult {
 
+    /**
+     * An identifier for a failure. More stable than a stack trace / line number / exception
+     * message, but less informative. Useful for failure telemetry when trying to understand root
+     * causes of problems.
+     */
+    @Target(ElementType.TYPE_USE)
+    @Retention(RetentionPolicy.SOURCE)
+    @interface FailureIdentifier {}
+
+    static final @FailureIdentifier int FAILURE_IDENTIFIER_MISMATCHED_ORIGINATE_TIMESTAMP = 1;
+    static final @FailureIdentifier int FAILURE_IDENTIFIER_BAD_SERVER_MODE = 2;
+    static final @FailureIdentifier int FAILURE_IDENTIFIER_UNEXPECTED_KISS_CODE1 = 3;
+    static final @FailureIdentifier int FAILURE_IDENTIFIER_UNEXPECTED_KISS_CODE2 = 4;
+    static final @FailureIdentifier int FAILURE_IDENTIFIER_UNKNOWN_KISS_CODE = 5;
+    static final @FailureIdentifier int FAILURE_IDENTIFIER_ZERO_TRANSMIT_TIMESTAMP = 6;
+    static final @FailureIdentifier int FAILURE_IDENTIFIER_UNSYNCHRONIZED_SERVER = 7;
+    static final @FailureIdentifier int FAILURE_IDENTIFIER_UNTRUSTED_STRATUM = 8;
+    static final @FailureIdentifier int FAILURE_IDENTIFIER_REFERENCE_TIMESTAMP_ZERO = 9;
+    static final @FailureIdentifier int FAILURE_IDENTIFIER_SOCKET_SEND_EXCEPTION = 10;
+    static final @FailureIdentifier int FAILURE_IDENTIFIER_SOCKET_RECEIVE_TIMEOUT = 11;
+    static final @FailureIdentifier int FAILURE_IDENTIFIER_SOCKET_RECEIVE_EXCEPTION = 12;
+    static final @FailureIdentifier int FAILURE_IDENTIFIER_SOCKET_INIT_EXCEPTION = 13;
+    static final @FailureIdentifier int FAILURE_IDENTIFIER_UNEXPECTED_PACKET_RECEIVED = 14;
+
     /** The address of the NTP server. */
     final InetSocketAddress serverSocketAddress;
 
     /** The message sent to the NTP server. */
     final NtpMessage request;
 
+    /** An abstract identifier for the failure type . */
+    final @FailureIdentifier int failureIdentifier;
+
     /** An exception that describes the failure. */
     final Exception failureException;
 
     FailureResult(
-        InetSocketAddress serverSocketAddress, NtpMessage request, Exception failureException) {
+        InetSocketAddress serverSocketAddress,
+        NtpMessage request,
+        @FailureIdentifier int failureIdentifier,
+        Exception failureException) {
       this.serverSocketAddress = Objects.requireNonNull(serverSocketAddress, "serverSocketAddress");
       this.request = Objects.requireNonNull(request, "request");
+      this.failureIdentifier = failureIdentifier;
       this.failureException = Objects.requireNonNull(failureException, "failureException");
     }
 
@@ -482,6 +584,7 @@ public final class SntpQueryOperation
       FailureResult that = (FailureResult) o;
       return serverSocketAddress.equals(that.serverSocketAddress)
           && request.equals(that.request)
+          && failureIdentifier == that.failureIdentifier
           && failureException.equals(that.failureException);
     }
 
@@ -497,6 +600,8 @@ public final class SntpQueryOperation
           + serverSocketAddress
           + ", request="
           + request
+          + ", failureIdentifier="
+          + failureIdentifier
           + ", failureException="
           + failureException
           + '}';

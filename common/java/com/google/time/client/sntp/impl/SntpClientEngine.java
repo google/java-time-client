@@ -91,7 +91,9 @@ public class SntpClientEngine {
     for (FailureResult failureResult : clusteredServiceResult.getFailureValues()) {
       sntpQueryDebugInfo.addSntpQueryOperationResults(
           NetworkOperationResult.failure(
-              failureResult.serverSocketAddress, failureResult.failureException));
+              failureResult.serverSocketAddress,
+              failureResult.failureIdentifier,
+              failureResult.failureException));
     }
 
     if (clusteredServiceResult.isSuccess()) {
