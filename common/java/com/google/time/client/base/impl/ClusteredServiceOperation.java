@@ -16,6 +16,7 @@
 package com.google.time.client.base.impl;
 
 import com.google.time.client.base.Duration;
+import com.google.time.client.base.Logger;
 import com.google.time.client.base.Network;
 import com.google.time.client.base.Ticker;
 import com.google.time.client.base.Ticks;
@@ -103,7 +104,7 @@ public final class ClusteredServiceOperation<R, S, T> {
         ServiceResult<S, T> success,
         List<ServiceResult<S, T>> failures) {
       return new ClusteredServiceResult<S, T>(
-          allIpAddresses, TYPE_SUCCESS, success, failures, /*halted=*/ true);
+          allIpAddresses, TYPE_SUCCESS, success, failures, /* halted= */ true);
     }
 
     /**
@@ -115,7 +116,7 @@ public final class ClusteredServiceOperation<R, S, T> {
     public static <S, T> ClusteredServiceResult<S, T> timeAllowedExceeded(
         List<InetAddress> allIpAddresses, List<ServiceResult<S, T>> failures) {
       return new ClusteredServiceResult<>(
-          allIpAddresses, TYPE_TIME_ALLOWED_EXCEEDED, null, failures, /*halted=*/ false);
+          allIpAddresses, TYPE_TIME_ALLOWED_EXCEEDED, null, failures, /* halted= */ false);
     }
 
     /**
@@ -223,6 +224,7 @@ public final class ClusteredServiceOperation<R, S, T> {
     }
   }
 
+  private final Logger logger;
   private final Ticker timeAllowedTicker;
   private final Network network;
   private final ServiceOperation<R, S, T> operation;
@@ -235,7 +237,11 @@ public final class ClusteredServiceOperation<R, S, T> {
    * @param operation the operation to perform
    */
   public ClusteredServiceOperation(
-      Ticker timeAllowedTicker, Network network, ServiceOperation<R, S, T> operation) {
+      Logger logger,
+      Ticker timeAllowedTicker,
+      Network network,
+      ServiceOperation<R, S, T> operation) {
+    this.logger = Objects.requireNonNull(logger, "logger");
     this.timeAllowedTicker = Objects.requireNonNull(timeAllowedTicker, "timeAllowedTicker");
     this.network = Objects.requireNonNull(network, "network");
     this.operation = Objects.requireNonNull(operation, "operation");
@@ -274,18 +280,19 @@ public final class ClusteredServiceOperation<R, S, T> {
     while (true) {
       inetAddress = allIpAddresses.get(ipAddressIndex);
 
-      // Check whether time allowed has been exceeded.
-      Ticks nowTicks = timeAllowedTicker.ticks();
-      Duration timeAllowedRemaining =
-          calculateTimeAllowedRemainingOrNull(timeAllowed, startTicks, nowTicks);
+      // Check whether time allowed has already been exceeded.
+      Ticks beforeOperationTicks = timeAllowedTicker.ticks();
+      Duration operationTimeAllowedOrNull =
+          calculateTimeAllowedRemainingOrNull(timeAllowed, startTicks, beforeOperationTicks);
       boolean timeAllowedExceeded =
-          timeAllowedRemaining != null && timeAllowedRemaining.compareTo(Duration.ZERO) <= 0;
+          operationTimeAllowedOrNull != null
+              && operationTimeAllowedOrNull.compareTo(Duration.ZERO) <= 0;
       if (timeAllowedExceeded) {
         return ClusteredServiceResult.timeAllowedExceeded(allIpAddresses, failures);
       }
 
       // Perform the operation.
-      result = operation.execute(serverName, inetAddress, parameter, timeAllowedRemaining);
+      result = operation.execute(serverName, inetAddress, parameter, operationTimeAllowedOrNull);
       Ticks afterOperationTicks = timeAllowedTicker.ticks();
 
       if (result.isSuccess()) {
@@ -294,22 +301,33 @@ public final class ClusteredServiceOperation<R, S, T> {
       }
 
       if (result.isTimeAllowedExceeded()) {
-        // Operation reported that the time allowed has been exceeded.
-        timeAllowedRemaining =
-            calculateTimeAllowedRemainingOrNull(timeAllowed, startTicks, afterOperationTicks);
-        if (timeAllowedRemaining.compareTo(Duration.ZERO) > 0) {
-          // The operation "lied" about exceeding the time remaining. Treat this as a coding error
-          // and throw an exception.
+        // Operation reported that the time it was allowed has been exceeded. Has it?
+        if (operationTimeAllowedOrNull == null) {
           throw new IllegalStateException(
               "operation="
                   + operation
-                  + " reported time allowed exceed (result="
-                  + result
-                  + "), but time allowed remains="
-                  + timeAllowedRemaining);
-        } else {
-          return ClusteredServiceResult.timeAllowedExceeded(allIpAddresses, failures);
+                  + " reported that its time allowed was exceeded, but it wasn't given a time"
+                  + " limit");
         }
+        // operationTimeAllowedOrNull != null
+        // Calculate how long it took (this will overestimate)
+        Duration actualTimeTaken =
+            timeAllowedTicker.durationBetween(beforeOperationTicks, afterOperationTicks);
+        if (actualTimeTaken.compareTo(operationTimeAllowedOrNull) < 0) {
+          // The operation "lied" about exceeding the time remaining. Log it, but continue to treat
+          // it as a normal timeout as it should be rare.
+          logger.fine(
+              "operation="
+                  + operation
+                  + " reported its time allowed has been exceeded (result="
+                  + result
+                  + "). It was allowed="
+                  + operationTimeAllowedOrNull
+                  + " but it only took="
+                  + actualTimeTaken
+                  + ". This could indicate a problem, e.g. sockets timing out too early.");
+        }
+        return ClusteredServiceResult.timeAllowedExceeded(allIpAddresses, failures);
       }
 
       // A failure of some sort

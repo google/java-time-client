@@ -52,7 +52,9 @@ public class ClusteredServiceOperationTest {
     fakeTicker = fakeClocks.getFakeTicker();
     fakeNetwork = new FakeNetwork(fakeTicker);
     serviceOperation = new TestServiceOperation();
-    clusteredOperation = new ClusteredServiceOperation<>(fakeTicker, fakeNetwork, serviceOperation);
+    clusteredOperation =
+        new ClusteredServiceOperation<>(
+            NoOpLogger.instance(), fakeTicker, fakeNetwork, serviceOperation);
   }
 
   @Test
@@ -269,9 +271,14 @@ public class ClusteredServiceOperationTest {
     // The first operation will report a timeout, but will only have taken 3 seconds.
     Duration timeAllowed = Duration.ofSeconds(5, 0);
     Parameter parameter = new Parameter();
-    assertThrows(
-        IllegalStateException.class,
-        () -> clusteredOperation.execute("server1", parameter, timeAllowed));
+    ClusteredServiceOperation.ClusteredServiceResult<Success, Failure> clusteredServiceResult =
+        clusteredOperation.execute("server1", parameter, timeAllowed);
+    assertFalse(clusteredServiceResult.isSuccess());
+    assertFalse(clusteredServiceResult.isFailure());
+    assertFalse(clusteredServiceResult.isHalted());
+    assertTrue(clusteredServiceResult.isTimeAllowedExceeded());
+    List<Failure> expectedFailureValues = Collections.emptyList();
+    assertEquals(expectedFailureValues, clusteredServiceResult.getFailureValues());
   }
 
   private static InetAddress createInetAddress(int... addressByteInts) throws UnknownHostException {
