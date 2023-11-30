@@ -57,7 +57,7 @@ public class SntpClientEngine {
         new SntpQueryOperation(
             logger, network, instantSource, ticker, clientConfig, requestSupplier);
     ClusteredServiceOperation<Void, SuccessResult, FailureResult> networkServiceConnector =
-        new ClusteredServiceOperation<>(ticker, network, sntpQueryOperation);
+        new ClusteredServiceOperation<>(logger, ticker, network, sntpQueryOperation);
     SntpServiceConnectorImpl sntpServiceConnector =
         new SntpServiceConnectorImpl(clientConfig, networkServiceConnector);
     return new SntpClientEngine(logger, sntpServiceConnector);

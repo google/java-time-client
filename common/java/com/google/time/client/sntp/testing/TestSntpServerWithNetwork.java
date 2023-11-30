@@ -139,16 +139,12 @@ public final class TestSntpServerWithNetwork<E extends TestSntpServerEngine, N e
     Random random = new PredictableRandom();
     Supplier<NtpMessage> requestFactory =
         new SntpRequestFactory(clientInstantSource, random, 3, true);
+    NoOpLogger logger = NoOpLogger.instance();
     SntpQueryOperation sntpQueryOperation =
         new SntpQueryOperation(
-            NoOpLogger.instance(),
-            network,
-            clientInstantSource,
-            clientTicker,
-            clientConfig,
-            requestFactory);
+            logger, network, clientInstantSource, clientTicker, clientConfig, requestFactory);
     ClusteredServiceOperation<Void, SuccessResult, FailureResult> networkServiceConnector =
-        new ClusteredServiceOperation<>(clientTicker, network, sntpQueryOperation);
+        new ClusteredServiceOperation<>(logger, clientTicker, network, sntpQueryOperation);
     return new SntpServiceConnectorImpl(clientConfig, networkServiceConnector);
   }
 
