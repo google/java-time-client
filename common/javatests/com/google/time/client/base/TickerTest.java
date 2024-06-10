@@ -44,23 +44,23 @@ public class TickerTest {
     assertThrows(
         ArithmeticException.class,
         () ->
-            TestTicker.incrementsBetween(
-                Ticks.fromTickerValue(ticker, Long.MIN_VALUE), Ticks.fromTickerValue(ticker, 0)));
+            ticker.incrementsBetween(
+                ticker.forTickerValue(Long.MIN_VALUE), ticker.forTickerValue(0)));
   }
 
   private static void doIncrementsBetweenTest(TestTicker ticker, long tickerValue, long increment) {
-    Ticks t1 = Ticks.fromTickerValue(ticker, tickerValue);
-    Ticks t2 = Ticks.fromTickerValue(ticker, ExactMath.addExact(tickerValue, increment));
+    Ticks t1 = ticker.forTickerValue(tickerValue);
+    Ticks t2 = ticker.forTickerValue(ExactMath.addExact(tickerValue, increment));
     if (willSubtractionOverflow(t2.getValue(), t1.getValue())) {
       fail("Bad test");
     } else {
-      assertEquals(increment, TestTicker.incrementsBetween(t1, t2));
+      assertEquals(increment, ticker.incrementsBetween(t1, t2));
     }
 
     if (willSubtractionOverflow(t1.getValue(), t2.getValue())) {
       fail("Bad test");
     } else {
-      assertEquals(-increment, TestTicker.incrementsBetween(t2, t1));
+      assertEquals(-increment, ticker.incrementsBetween(t2, t1));
     }
   }
 
@@ -83,6 +83,10 @@ public class TickerTest {
     @Override
     public Duration durationBetween(Ticks start, Ticks end) throws IllegalArgumentException {
       throw new UnsupportedOperationException();
+    }
+
+    public Ticks forTickerValue(long value) {
+      return createTicks(value);
     }
   }
 }

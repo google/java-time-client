@@ -34,7 +34,7 @@ import com.google.time.client.base.impl.Objects;
  */
 public final class Ticks implements Comparable<Ticks> {
 
-  private final Ticker originTicker;
+  /*@NonNull*/ private final Ticker originTicker;
   private final long value;
 
   private Ticks(/*@NonNull*/ Ticker originTicker, long value) {
@@ -44,12 +44,14 @@ public final class Ticks implements Comparable<Ticks> {
 
   /**
    * Creates a {@link Ticks} from an originating ticker and a value. This method should only be
-   * called from {@link Ticker#ticks()} implementations and in tests.
+   * called from {@link Ticker#ticks()} implementations and in tests. Look for {@link
+   * Ticker}-specific methods if you want a {@link Ticks} with a value for comparison with a raw
+   * clock value.
    *
    * @param originTicker - the originating ticker
    * @param value the value from a Ticker
    */
-  public static /*@NonNull*/ Ticks fromTickerValue(/*@NonNull*/ Ticker originTicker, long value) {
+  static /*@NonNull*/ Ticks fromTickerValue(/*@NonNull*/ Ticker originTicker, long value) {
     return new Ticks(originTicker, value);
   }
 
@@ -101,7 +103,7 @@ public final class Ticks implements Comparable<Ticks> {
   }
 
   /** Returns the ticker that originated the ticks. */
-  public Ticker getOriginTicker() {
+  /*@NonNull*/ public Ticker getOriginTicker() {
     return originTicker;
   }
 

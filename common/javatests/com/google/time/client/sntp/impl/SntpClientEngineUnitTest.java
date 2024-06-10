@@ -26,7 +26,6 @@ import static org.junit.Assert.assertEquals;
 
 import com.google.time.client.base.Duration;
 import com.google.time.client.base.Instant;
-import com.google.time.client.base.Ticker;
 import com.google.time.client.base.Ticks;
 import com.google.time.client.base.testing.FakeClocks;
 import java.net.Inet4Address;
@@ -209,7 +208,7 @@ public class SntpClientEngineUnitTest {
   @Test
   public void performNtpCalculations() throws Exception {
     FakeClocks fakeClocks = new FakeClocks();
-    Ticker ticker = fakeClocks.getFakeTicker();
+    FakeClocks.FakeTicker ticker = fakeClocks.getFakeTicker();
 
     Timestamp64 requestTimestamp = Timestamp64.fromString("e4dc720c.4c0064aa");
 
@@ -218,8 +217,8 @@ public class SntpClientEngineUnitTest {
     NtpMessage request = NtpMessage.create(requestHeader);
 
     Instant requestInstant = requestTimestamp.toInstant(0);
-    Ticks requestTimeTicks = Ticks.fromTickerValue(ticker, 296881000);
-    Ticks responseTimeTicks = Ticks.fromTickerValue(ticker, 308432730);
+    Ticks requestTimeTicks = ticker.ticksForValue(296881000);
+    Ticks responseTimeTicks = ticker.ticksForValue(308432730);
 
     NtpHeader responseHeader =
         NtpHeader.Builder.createEmptyV3()

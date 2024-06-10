@@ -16,30 +16,57 @@
 
 package com.google.time.client.base;
 
+import static com.google.time.client.base.impl.DateTimeConstants.NANOS_PER_MILLISECOND;
+
 import android.os.SystemClock;
+import com.google.time.client.base.impl.ExactMath;
 
 /**
  * A {@link Ticker} that provides nanosecond-precision access to the Android kernel's CLOCK_BOOTTIME
  * clock.
  */
-public final class PlatformTicker extends Ticker {
+public final class PlatformTicker extends AndroidTicker {
 
   private static final PlatformTicker INSTANCE = new PlatformTicker();
 
-  public static Ticker instance() {
+  public static AndroidTicker instance() {
     return INSTANCE;
   }
 
   private PlatformTicker() {}
 
   @Override
-  public Duration durationBetween(Ticks start, Ticks end) throws IllegalArgumentException {
-    return Duration.ofNanos(incrementsBetween(start, end));
+  public Ticks ticks() {
+    return createTicks(SystemClock.elapsedRealtimeNanos());
   }
 
   @Override
-  public Ticks ticks() {
-    return Ticks.fromTickerValue(this, SystemClock.elapsedRealtimeNanos());
+  public Ticks ticksForElapsedRealtimeNanos(long elapsedRealtimeNanos) {
+    // This ticker uses the SystemClock.elapsedRealtimeNanos() value with no adjustments.
+    return createTicks(elapsedRealtimeNanos);
+  }
+
+  @Override
+  public Ticks ticksForElapsedRealtimeMillis(long elapsedRealtimeMillis) {
+    long nanosValue = ExactMath.multiplyExact(elapsedRealtimeMillis, NANOS_PER_MILLISECOND);
+    return createTicks(nanosValue);
+  }
+
+  @Override
+  public long elapsedRealtimeNanosForTicks(Ticks ticks) {
+    checkThisIsTicksOrigin(ticks);
+    return ticks.getValue();
+  }
+
+  @Override
+  public long elapsedRealtimeMillisForTicks(Ticks ticks) {
+    checkThisIsTicksOrigin(ticks);
+    return ticks.getValue() / NANOS_PER_MILLISECOND;
+  }
+
+  @Override
+  public Duration durationBetween(Ticks start, Ticks end) {
+    return Duration.ofNanos(incrementsBetween(start, end));
   }
 
   @Override

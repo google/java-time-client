@@ -32,31 +32,16 @@ public final class PlatformTicker extends Ticker {
 
   @Override
   public Ticks ticks() {
-    return Ticks.fromTickerValue(this, System.nanoTime());
+    return createTicks(System.nanoTime());
+  }
+
+  @Override
+  /*@NonNull*/ public Duration durationBetween(/*@NonNull*/ Ticks start, /*@NonNull*/ Ticks end) {
+    return Duration.ofNanos(incrementsBetween(start, end));
   }
 
   @Override
   public String toString() {
     return "PlatformTicker";
-  }
-
-  /**
-   * Calculates the duration between two Ticks.
-   *
-   * <p>The accuracy and precision of the {@link Duration} will depend on the origin {@link
-   * Ticker}'s accuracy and precision. If the origin {@link Ticker} has low accuracy, the resulting
-   * {@link Duration} will be inaccurate. If the ticks do not originate from the same ticker, then a
-   * IllegalArgumentException is thrown.
-   *
-   * @param start - the start ticks, not null
-   * @param end - the end ticks, not null
-   * @return a non null Duration that is the period of time between the two ticks. If start was read
-   *     after end then the return value will be a negative period else it is positive.
-   * @throws IllegalArgumentException - if the ticks do not originate from the same ticker
-   * @throws ArithmeticException - if the calculation results in an overflow
-   */
-  /*@NonNull*/ public Duration durationBetween(
-      /*@NonNull*/ Ticks start, /*@NonNull*/ Ticks end) throws IllegalArgumentException {
-    return Duration.ofNanos(incrementsBetween(start, end));
   }
 }

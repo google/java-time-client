@@ -86,12 +86,17 @@ public final class FakeClocks implements Advanceable {
 
     /** Asserts the current ticks value matches the one supplied. Does not auto advance. */
     public void assertCurrentTicks(Ticks actual) {
-      assertEquals(Ticks.fromTickerValue(this, ticksValue), actual);
+      assertEquals(createTicks(ticksValue), actual);
     }
 
     /** Returns the current ticks value. Does not auto advance. */
     public Ticks getCurrentTicks() {
-      return Ticks.fromTickerValue(this, ticksValue);
+      return createTicks(ticksValue);
+    }
+
+    /** Returns a ticks value. Does not auto advance. */
+    public Ticks ticksForValue(int value) {
+      return createTicks(value);
     }
 
     /** Sets the current ticks value. Does not auto advance. */
