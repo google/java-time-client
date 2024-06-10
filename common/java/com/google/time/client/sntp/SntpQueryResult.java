@@ -31,10 +31,13 @@ public final class SntpQueryResult {
 
   /** The type used when an SNTP query was successful. */
   public static final @Type int TYPE_SUCCESS = 10;
+
   /** The type used when an SNTP query was unsuccessful due to a transient failure. */
   public static final @Type int TYPE_RETRY_LATER = 11;
+
   /** The type used when an SNTP query was unsuccessful due to a protocol error. */
   public static final @Type int TYPE_PROTOCOL_ERROR = 12;
+
   /**
    * The type used when an SNTP query was not able to complete because the time allowed was
    * exceeded.

@@ -64,7 +64,7 @@ public class ClusteredServiceOperationTest {
     Parameter parameter = new Parameter();
     assertThrows(
         UnknownHostException.class,
-        () -> clusteredOperation.execute("server1", parameter, /*timeAllowed=*/ null));
+        () -> clusteredOperation.execute("server1", parameter, /* timeAllowed= */ null));
   }
 
   @Test
@@ -79,7 +79,7 @@ public class ClusteredServiceOperationTest {
 
     Parameter parameter = new Parameter();
     ClusteredServiceOperation.ClusteredServiceResult<Success, Failure> clusteredServiceResult =
-        clusteredOperation.execute("server1", parameter, /*timeAllowed=*/ null);
+        clusteredOperation.execute("server1", parameter, /* timeAllowed= */ null);
     assertFalse(clusteredServiceResult.isSuccess());
     assertTrue(clusteredServiceResult.isFailure());
     assertFalse(clusteredServiceResult.isHalted());
@@ -105,7 +105,7 @@ public class ClusteredServiceOperationTest {
 
     Parameter parameter = new Parameter();
     ClusteredServiceOperation.ClusteredServiceResult<Success, Failure> clusteredServiceResult =
-        clusteredOperation.execute("server1", parameter, /*timeAllowed=*/ null);
+        clusteredOperation.execute("server1", parameter, /* timeAllowed= */ null);
     assertTrue(clusteredServiceResult.isSuccess());
     assertFalse(clusteredServiceResult.isFailure());
     assertTrue(clusteredServiceResult.isHalted());
@@ -130,7 +130,7 @@ public class ClusteredServiceOperationTest {
 
     Parameter parameter = new Parameter();
     ClusteredServiceOperation.ClusteredServiceResult<Success, Failure> clusteredServiceResult =
-        clusteredOperation.execute("server1", parameter, /*timeAllowed=*/ null);
+        clusteredOperation.execute("server1", parameter, /* timeAllowed= */ null);
     assertFalse(clusteredServiceResult.isSuccess());
     assertTrue(clusteredServiceResult.isFailure());
     assertTrue(clusteredServiceResult.isHalted());
@@ -155,7 +155,7 @@ public class ClusteredServiceOperationTest {
 
     Parameter parameter = new Parameter();
     ClusteredServiceOperation.ClusteredServiceResult<Success, Failure> clusteredServiceResult =
-        clusteredOperation.execute("server1", parameter, /*timeAllowed=*/ null);
+        clusteredOperation.execute("server1", parameter, /* timeAllowed= */ null);
     assertTrue(clusteredServiceResult.isSuccess());
     assertFalse(clusteredServiceResult.isFailure());
     assertTrue(clusteredServiceResult.isHalted());
@@ -359,7 +359,7 @@ public class ClusteredServiceOperationTest {
 
   private static TestServiceOperation.Function alwaysFails() {
     return (ipAddress, param, timeAllowed) ->
-        ServiceResult.failure(ipAddress, new Failure(ipAddress, param), /*halt=*/ false);
+        ServiceResult.failure(ipAddress, new Failure(ipAddress, param), /* halt= */ false);
   }
 
   private static TestServiceOperation.Function alwaysFailsAndTakesTime(
@@ -372,7 +372,7 @@ public class ClusteredServiceOperationTest {
         return ServiceResult.timeAllowedExceeded(ipAddress);
       } else {
         ticker.advance(serviceTimeTaken);
-        return ServiceResult.failure(ipAddress, new Failure(ipAddress, param), /*halt=*/ false);
+        return ServiceResult.failure(ipAddress, new Failure(ipAddress, param), /* halt= */ false);
       }
     };
   }

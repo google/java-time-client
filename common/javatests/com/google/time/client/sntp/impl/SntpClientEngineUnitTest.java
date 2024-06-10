@@ -76,6 +76,7 @@ public class SntpClientEngineUnitTest {
       LATE_ERA_RESPONSE_HEADER.getReceiveTimestamp();
   private static final Timestamp64 LATE_ERA_TRANSMIT_TIMESTAMP =
       LATE_ERA_RESPONSE_HEADER.getTransmitTimestamp();
+
   /** This is the actual UTC time in the server if it is in ERA0 */
   private static final Instant LATE_ERA0_SERVER_INSTANT =
       calculateIdealServerTime(LATE_ERA_RECEIVE_TIMESTAMP, LATE_ERA_TRANSMIT_TIMESTAMP, 0);
@@ -124,6 +125,7 @@ public class SntpClientEngineUnitTest {
 
   private static final Timestamp64 EARLY_ERA_TRANSMIT_TIMESTAMP =
       EARLY_ERA_RESPONSE_HEADER.getTransmitTimestamp();
+
   /** This is the actual UTC time in the server if it is in ERA0 */
   private static final Instant EARLY_ERA1_SERVER_INSTANT =
       calculateIdealServerTime(EARLY_ERA_RECEIVE_TIMESTAMP, EARLY_ERA_TRANSMIT_TIMESTAMP, 1);
