@@ -41,8 +41,8 @@ public class FakeClocksTest {
     assertEquals(Instant.ofEpochMilli(0), instantSource.instant());
 
     FakeTicker ticker = fakeClocks.getFakeTicker();
-    assertEquals(Ticks.fromTickerValue(ticker, 0), ticker.ticks());
-    assertEquals(Ticks.fromTickerValue(ticker, 0), ticker.getCurrentTicks());
+    assertEquals(ticker.ticksForValue(0), ticker.ticks());
+    assertEquals(ticker.ticksForValue(0), ticker.getCurrentTicks());
   }
 
   @Test

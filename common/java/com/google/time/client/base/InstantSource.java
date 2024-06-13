@@ -24,6 +24,7 @@ public abstract class InstantSource {
 
   /** Used to indicate Instants have millisecond precision. */
   public static final int PRECISION_MILLIS = MILLISECONDS_PER_SECOND;
+
   /** Used to indicate Instants have nanosecond precision. */
   public static final int PRECISION_NANOS = NANOS_PER_SECOND;
 

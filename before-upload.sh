@@ -16,8 +16,10 @@
 # A "pre-submit" script that invokes various formatting / linting tools and runs
 # tests.
 
-ROOT_DIR=`dirname $0`
-ORIG_DIR=`pwd`
+SCRIPT_DIR=$(dirname $0)
+ROOT_DIR=$(realpath ${SCRIPT_DIR})
+ORIG_DIR=$(pwd)
+BAZEL_COMMAND="bazel --bazelrc=${ROOT_DIR}/java-time-client.bazelrc"
 
 function echo_command() { echo $*; $*; }
 function print_separator() { echo "============================="; }
@@ -50,15 +52,16 @@ if [[ -z ${ANDROID_SDK} ]]; then
   echo ANDROID_SDK not set
   exit 1
 fi
+
 echo "Running Android tests with robolectric, ANDROID_HOME=${ANDROID_SDK}..."
 echo_command cd ${ROOT_DIR}/android
-ANDROID_HOME=${ANDROID_SDK} echo_command bazel test //javatests/com/google/time/client/...
+ANDROID_HOME=${ANDROID_SDK} echo_command ${BAZEL_COMMAND} test ${BAZEL_BUILD_OPTIONS} //javatests/com/google/time/client/...
 
 print_separator
 cd ${ORIG_DIR}
 echo Running Java SE tests with bazel JDK...
 cd ${ROOT_DIR}/javase
-echo_command bazel test //javatests/com/google/time/client/...
+echo_command ${BAZEL_COMMAND} test ${BAZEL_BUILD_OPTIONS} //javatests/com/google/time/client/...
 
 print_separator
 if [[ -z ${JDK8} ]]; then
@@ -66,7 +69,7 @@ if [[ -z ${JDK8} ]]; then
   exit 1
 fi
 echo "Running Java SE tests with JDK 8 on path (${JDK8})..."
-PATH=${JDK8}/bin:${PATH} echo_command bazel test --java_runtime_version=local_jdk //javatests/com/google/time/client/...
+PATH=${JDK8}/bin:${PATH} echo_command ${BAZEL_COMMAND} test ${BAZEL_BUILD_OPTIONS} --java_runtime_version=local_jdk //javatests/com/google/time/client/...
 
 print_separator
 cd ${ORIG_DIR}

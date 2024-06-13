@@ -53,6 +53,17 @@ public abstract class Ticker {
       /*@NonNull*/ Ticks start, /*@NonNull*/ Ticks end) throws IllegalArgumentException;
 
   /**
+   * Confirms the supplied {@link Ticks} is from this ticker. If not, {@link
+   * IllegalArgumentException} is thrown.
+   */
+  protected final void checkThisIsTicksOrigin(/*@NonNull*/ Ticks ticks) {
+    if (ticks.getOriginTicker() != this) {
+      throw new IllegalArgumentException(
+          String.format("Ticks (%s) must be from this Ticker (%s)", ticks, this));
+    }
+  }
+
+  /**
    * Returns the number of increments between two Ticks.
    *
    * @param start - the start ticks, not null
@@ -62,12 +73,16 @@ public abstract class Ticker {
    * @throws IllegalArgumentException - if the ticks do not originate from the same ticker
    * @throws ArithmeticException - if the calculation results in an overflow
    */
-  protected static long incrementsBetween(
+  protected final long incrementsBetween(
       /*@NonNull*/ Ticks start, /*@NonNull*/ Ticks end) throws IllegalArgumentException {
-    if (start.getOriginTicker() != end.getOriginTicker()) {
-      throw new IllegalArgumentException("Ticks must be from the same origin");
-    }
+    checkThisIsTicksOrigin(start);
+    checkThisIsTicksOrigin(end);
 
     return ExactMath.subtractExact(end.getValue(), start.getValue());
+  }
+
+  /** Factory method for a {@link Ticks} that can be used by subclasses. */
+  protected final Ticks createTicks(long value) {
+    return Ticks.fromTickerValue(this, value);
   }
 }

@@ -1,0 +1,6 @@
+# bazel's sandbox doesn't like the symlinks from javase/ and android/ to common/
+# Without --spawn_strategy=standalone you'll see errors like
+# java.nio.file.NoSuchFileException: java/com/google/time/client/base/DateTimeException.java
+# because the sandbox copies the symlinks then can't find what they link to.
+build --spawn_strategy=standalone
+

@@ -14,7 +14,10 @@
 # limitations under the License.
 
 
-ANDROID_DIR=`dirname $0`
+SCRIPT_DIR=$(dirname $0)
+ANDROID_DIR=$(realpath ${SCRIPT_DIR})
+ROOT_DIR=$(realpath ${ANDROID_DIR}/..)
+BAZEL_COMMAND="bazel --bazelrc=${ROOT_DIR}/java-time-client.bazelrc"
 
 cd ${ANDROID_DIR}
 
@@ -53,7 +56,7 @@ set -e
 
 function echo_command() { echo $*; $*; }
 
-echo_command bazel build ${RULES[@]}
+echo_command ${BAZEL_COMMAND} build ${RULES[@]}
 
 for APK in ${APKS[@]}; do
   echo_command adb install bazel-bin/${APK}

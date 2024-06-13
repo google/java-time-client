@@ -26,7 +26,6 @@ import static org.junit.Assert.assertEquals;
 
 import com.google.time.client.base.Duration;
 import com.google.time.client.base.Instant;
-import com.google.time.client.base.Ticker;
 import com.google.time.client.base.Ticks;
 import com.google.time.client.base.testing.FakeClocks;
 import java.net.Inet4Address;
@@ -76,6 +75,7 @@ public class SntpClientEngineUnitTest {
       LATE_ERA_RESPONSE_HEADER.getReceiveTimestamp();
   private static final Timestamp64 LATE_ERA_TRANSMIT_TIMESTAMP =
       LATE_ERA_RESPONSE_HEADER.getTransmitTimestamp();
+
   /** This is the actual UTC time in the server if it is in ERA0 */
   private static final Instant LATE_ERA0_SERVER_INSTANT =
       calculateIdealServerTime(LATE_ERA_RECEIVE_TIMESTAMP, LATE_ERA_TRANSMIT_TIMESTAMP, 0);
@@ -124,6 +124,7 @@ public class SntpClientEngineUnitTest {
 
   private static final Timestamp64 EARLY_ERA_TRANSMIT_TIMESTAMP =
       EARLY_ERA_RESPONSE_HEADER.getTransmitTimestamp();
+
   /** This is the actual UTC time in the server if it is in ERA0 */
   private static final Instant EARLY_ERA1_SERVER_INSTANT =
       calculateIdealServerTime(EARLY_ERA_RECEIVE_TIMESTAMP, EARLY_ERA_TRANSMIT_TIMESTAMP, 1);
@@ -207,7 +208,7 @@ public class SntpClientEngineUnitTest {
   @Test
   public void performNtpCalculations() throws Exception {
     FakeClocks fakeClocks = new FakeClocks();
-    Ticker ticker = fakeClocks.getFakeTicker();
+    FakeClocks.FakeTicker ticker = fakeClocks.getFakeTicker();
 
     Timestamp64 requestTimestamp = Timestamp64.fromString("e4dc720c.4c0064aa");
 
@@ -216,8 +217,8 @@ public class SntpClientEngineUnitTest {
     NtpMessage request = NtpMessage.create(requestHeader);
 
     Instant requestInstant = requestTimestamp.toInstant(0);
-    Ticks requestTimeTicks = Ticks.fromTickerValue(ticker, 296881000);
-    Ticks responseTimeTicks = Ticks.fromTickerValue(ticker, 308432730);
+    Ticks requestTimeTicks = ticker.ticksForValue(296881000);
+    Ticks responseTimeTicks = ticker.ticksForValue(308432730);
 
     NtpHeader responseHeader =
         NtpHeader.Builder.createEmptyV3()

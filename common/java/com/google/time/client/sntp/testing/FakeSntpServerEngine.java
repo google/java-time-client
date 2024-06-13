@@ -42,6 +42,7 @@ public final class FakeSntpServerEngine implements TestSntpServerEngine {
   private final FakeClocks.FakeInstantSource instantSource;
 
   private Vector<NtpMessage> responseTemplates = new Vector<>();
+
   /** The template used after {@link #responseTemplates} is exhausted. */
   private NtpMessage lastResponseTemplate = createDefaultResponseTemplate();
 
