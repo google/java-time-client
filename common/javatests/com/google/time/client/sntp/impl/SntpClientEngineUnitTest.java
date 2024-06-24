@@ -28,6 +28,7 @@ import com.google.time.client.base.Duration;
 import com.google.time.client.base.Instant;
 import com.google.time.client.base.Ticks;
 import com.google.time.client.base.testing.FakeClocks;
+import com.google.time.client.base.testing.FakeTicker;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -208,7 +209,7 @@ public class SntpClientEngineUnitTest {
   @Test
   public void performNtpCalculations() throws Exception {
     FakeClocks fakeClocks = new FakeClocks();
-    FakeClocks.FakeTicker ticker = fakeClocks.getFakeTicker();
+    FakeTicker ticker = fakeClocks.getFakeTicker();
 
     Timestamp64 requestTimestamp = Timestamp64.fromString("e4dc720c.4c0064aa");
 

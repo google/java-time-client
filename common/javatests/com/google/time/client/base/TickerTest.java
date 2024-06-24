@@ -51,13 +51,13 @@ public class TickerTest {
   private static void doIncrementsBetweenTest(TestTicker ticker, long tickerValue, long increment) {
     Ticks t1 = ticker.forTickerValue(tickerValue);
     Ticks t2 = ticker.forTickerValue(ExactMath.addExact(tickerValue, increment));
-    if (willSubtractionOverflow(t2.getValue(), t1.getValue())) {
+    if (willSubtractionOverflow(ticker.valueForTicks(t2), ticker.valueForTicks(t1))) {
       fail("Bad test");
     } else {
       assertEquals(increment, ticker.incrementsBetween(t1, t2));
     }
 
-    if (willSubtractionOverflow(t1.getValue(), t2.getValue())) {
+    if (willSubtractionOverflow(ticker.valueForTicks(t1), ticker.valueForTicks(t2))) {
       fail("Bad test");
     } else {
       assertEquals(-increment, ticker.incrementsBetween(t2, t1));

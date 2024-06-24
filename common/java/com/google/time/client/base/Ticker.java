@@ -85,4 +85,10 @@ public abstract class Ticker {
   protected final Ticks createTicks(long value) {
     return Ticks.fromTickerValue(this, value);
   }
+
+  /** Extract the value from a {@link Ticks} created by this ticker. */
+  protected final long valueForTicks(Ticks ticks) {
+    checkThisIsTicksOrigin(ticks);
+    return ticks.getValue();
+  }
 }

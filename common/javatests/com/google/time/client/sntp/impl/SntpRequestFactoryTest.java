@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNotEquals;
 import com.google.time.client.base.Duration;
 import com.google.time.client.base.InstantSource;
 import com.google.time.client.base.testing.FakeClocks;
+import com.google.time.client.base.testing.FakeInstantSource;
 import com.google.time.client.base.testing.PredictableRandom;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,7 +35,7 @@ public class SntpRequestFactoryTest {
   private static final int SNTP_CLIENT_VERSION = 3;
 
   private PredictableRandom random;
-  private FakeClocks.FakeInstantSource instantSource;
+  private FakeInstantSource instantSource;
 
   @Before
   public void setUp() {

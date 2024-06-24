@@ -29,6 +29,8 @@ import com.google.time.client.base.Ticks;
 import com.google.time.client.base.impl.ClusteredServiceOperation.ServiceOperation.ServiceResult;
 import com.google.time.client.base.impl.NoOpLogger;
 import com.google.time.client.base.testing.FakeClocks;
+import com.google.time.client.base.testing.FakeInstantSource;
+import com.google.time.client.base.testing.FakeTicker;
 import com.google.time.client.base.testing.PredictableRandom;
 import com.google.time.client.sntp.BasicSntpClient;
 import com.google.time.client.sntp.NtpProtocolException;
@@ -56,9 +58,9 @@ public class SntpQueryOperationTest {
   private BasicSntpClient.ClientConfig clientConfig;
   private SntpRequestFactory requestFactory;
 
-  private FakeClocks.FakeTicker fakeClientTicker;
+  private FakeTicker fakeClientTicker;
 
-  private FakeClocks.FakeInstantSource fakeClientInstantSource;
+  private FakeInstantSource fakeClientInstantSource;
 
   @Before
   public void setUp() throws Exception {
