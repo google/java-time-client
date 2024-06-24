@@ -32,6 +32,8 @@ import com.google.time.client.base.NetworkOperationResult;
 import com.google.time.client.base.Ticks;
 import com.google.time.client.base.impl.NoOpLogger;
 import com.google.time.client.base.testing.FakeClocks;
+import com.google.time.client.base.testing.FakeInstantSource;
+import com.google.time.client.base.testing.FakeTicker;
 import com.google.time.client.sntp.NtpProtocolException;
 import com.google.time.client.sntp.NtpServerNotReachableException;
 import com.google.time.client.sntp.SntpQueryDebugInfo;
@@ -268,7 +270,7 @@ public class SntpClientEngineNetworkingTest {
     FakeClocks fakeClientClocks = new FakeClocks();
     Instant clientStartInstant = Instant.ofEpochMilli(1234L);
     fakeClientClocks.getFakeInstantSource().setInstant(clientStartInstant);
-    FakeClocks.FakeTicker clientTicker = fakeClientClocks.getFakeTicker();
+    FakeTicker clientTicker = fakeClientClocks.getFakeTicker();
     clientTicker.setTicksValue(99999999);
     Ticks clientStartTicks = clientTicker.getCurrentTicks();
 
@@ -308,7 +310,7 @@ public class SntpClientEngineNetworkingTest {
     responseTemplate = responseTemplate.toBuilder().setHeader(responseHeaderTemplate).build();
     fakeSntpServerEngine.setLastResponseTemplate(responseTemplate);
 
-    FakeClocks.FakeInstantSource clientInstantSource = fakeClientClocks.getFakeInstantSource();
+    FakeInstantSource clientInstantSource = fakeClientClocks.getFakeInstantSource();
     SntpServiceConnector sntpServiceConnector =
         testSntpServerWithNetwork.createConnector(clientInstantSource, clientTicker);
     SntpClientEngine engine = new SntpClientEngine(NoOpLogger.instance(), sntpServiceConnector);

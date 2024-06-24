@@ -25,6 +25,7 @@ import com.google.time.client.base.Ticks;
 import com.google.time.client.base.impl.Objects;
 import com.google.time.client.base.testing.Advanceable;
 import com.google.time.client.base.testing.FakeClocks;
+import com.google.time.client.base.testing.FakeTicker;
 import com.google.time.client.sntp.impl.NtpMessage;
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -193,7 +194,7 @@ public final class FakeNetwork implements Network {
     @Override
     public void receive(DatagramPacket packet) throws IOException {
       // Handle the network send delay and process the packet in the engine.
-      FakeClocks.FakeTicker clientTicker = clientClocks.getFakeTicker();
+      FakeTicker clientTicker = clientClocks.getFakeTicker();
       Ticks receiveStartTicks = clientTicker.ticks();
       processNetworkPacket();
 

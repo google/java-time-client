@@ -25,6 +25,7 @@ import com.google.time.client.base.Duration;
 import com.google.time.client.base.Network;
 import com.google.time.client.base.impl.ClusteredServiceOperation.ServiceOperation.ServiceResult;
 import com.google.time.client.base.testing.FakeClocks;
+import com.google.time.client.base.testing.FakeTicker;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -41,7 +42,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class ClusteredServiceOperationTest {
 
-  private FakeClocks.FakeTicker fakeTicker;
+  private FakeTicker fakeTicker;
   private FakeNetwork fakeNetwork;
   private TestServiceOperation serviceOperation;
   private ClusteredServiceOperation<Parameter, Success, Failure> clusteredOperation;
@@ -363,9 +364,7 @@ public class ClusteredServiceOperationTest {
   }
 
   private static TestServiceOperation.Function alwaysFailsAndTakesTime(
-      FakeClocks.FakeTicker ticker,
-      Duration serviceTimeTaken,
-      boolean operationReportsTimeAllowedExceeded) {
+      FakeTicker ticker, Duration serviceTimeTaken, boolean operationReportsTimeAllowedExceeded) {
     return (ipAddress, param, timeAllowed) -> {
       if (operationReportsTimeAllowedExceeded && timeAllowed.compareTo(serviceTimeTaken) <= 0) {
         ticker.advance(timeAllowed);
@@ -378,7 +377,7 @@ public class ClusteredServiceOperationTest {
   }
 
   private static TestServiceOperation.Function takesTimeAndLiesAboutTimeout(
-      FakeClocks.FakeTicker ticker, Duration serviceTimeTaken) {
+      FakeTicker ticker, Duration serviceTimeTaken) {
     return (ipAddress, param, timeAllowed) -> {
       ticker.advance(serviceTimeTaken);
       return ServiceResult.timeAllowedExceeded(ipAddress);
@@ -389,9 +388,9 @@ public class ClusteredServiceOperationTest {
 
     private Map<String, InetAddress[]> fakeDns = new HashMap<>();
     private Duration fakeDnsLookupTimeTaken = Duration.ZERO;
-    private FakeClocks.FakeTicker fakeTicker;
+    private FakeTicker fakeTicker;
 
-    public FakeNetwork(FakeClocks.FakeTicker fakeTicker) {
+    public FakeNetwork(FakeTicker fakeTicker) {
       this.fakeTicker = Objects.requireNonNull(fakeTicker);
     }
 

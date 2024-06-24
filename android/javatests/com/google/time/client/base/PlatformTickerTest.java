@@ -83,14 +83,15 @@ public class PlatformTickerTest {
     {
       long elapsedRealtimeNanos = 1234567890123L;
       Ticks nanoTicks = ticker.ticksForElapsedRealtimeNanos(elapsedRealtimeNanos);
-      assertEquals(elapsedRealtimeNanos, nanoTicks.getValue());
+      assertEquals(elapsedRealtimeNanos, ticker.valueForTicks(nanoTicks));
       assertEquals(elapsedRealtimeNanos, ticker.elapsedRealtimeNanosForTicks(nanoTicks));
     }
 
     {
       long elapsedRealtimeMillis = 1234567890L;
       Ticks millisTicks = ticker.ticksForElapsedRealtimeMillis(elapsedRealtimeMillis);
-      assertEquals(elapsedRealtimeMillis * NANOS_PER_MILLISECOND, millisTicks.getValue());
+      assertEquals(
+          elapsedRealtimeMillis * NANOS_PER_MILLISECOND, ticker.valueForTicks(millisTicks));
       assertEquals(elapsedRealtimeMillis, ticker.elapsedRealtimeMillisForTicks(millisTicks));
     }
   }

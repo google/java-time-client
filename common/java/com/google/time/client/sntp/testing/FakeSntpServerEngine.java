@@ -21,7 +21,7 @@ import com.google.time.client.base.Instant;
 import com.google.time.client.base.impl.Objects;
 import com.google.time.client.base.impl.PlatformRandom;
 import com.google.time.client.base.testing.Advanceable;
-import com.google.time.client.base.testing.FakeClocks;
+import com.google.time.client.base.testing.FakeInstantSource;
 import com.google.time.client.sntp.impl.NtpHeader;
 import com.google.time.client.sntp.impl.NtpMessage;
 import com.google.time.client.sntp.impl.Timestamp64;
@@ -39,7 +39,7 @@ public final class FakeSntpServerEngine implements TestSntpServerEngine {
   private final List<NtpMessage> requestsReceived = new ArrayList<>();
   private final List<NtpMessage> responsesSent = new ArrayList<>();
   private final List<Advanceable> advanceables = new ArrayList<>();
-  private final FakeClocks.FakeInstantSource instantSource;
+  private final FakeInstantSource instantSource;
 
   private Vector<NtpMessage> responseTemplates = new Vector<>();
 
@@ -49,7 +49,7 @@ public final class FakeSntpServerEngine implements TestSntpServerEngine {
   private Duration processingDuration = Duration.ZERO;
   private int quirkMode;
 
-  public FakeSntpServerEngine(FakeClocks.FakeInstantSource instantSource) {
+  public FakeSntpServerEngine(FakeInstantSource instantSource) {
     this.instantSource = Objects.requireNonNull(instantSource);
   }
 
