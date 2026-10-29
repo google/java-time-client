@@ -896,7 +896,6 @@ public class DurationTest {
     }
   }
 
-  @SuppressWarnings("AndroidJdkLibsChecker")
   @Test
   public void javaTimeInterop() {
     long nanos = 1234567890123L;

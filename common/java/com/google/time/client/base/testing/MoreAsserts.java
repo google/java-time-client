@@ -33,7 +33,7 @@ public final class MoreAsserts {
     assertEquals(two.hashCode(), one.hashCode());
   }
 
-  @SuppressWarnings("SelfComparison")
+  @SuppressWarnings({"SelfComparison", "SelfAssertion"})
   private static <T extends Comparable<T>> void assertSelfComparison(T obj) {
     assertEquals(obj, obj);
     assertEquals(0, obj.compareTo(obj));
@@ -48,7 +48,7 @@ public final class MoreAsserts {
     assertEquals(two.hashCode(), one.hashCode());
   }
 
-  @SuppressWarnings("SelfComparison")
+  @SuppressWarnings({"SelfComparison", "SelfAssertion"})
   private static <T> void assertSelfEquality(T obj) {
     assertEquals(obj, obj);
     assertEquals(obj.hashCode(), obj.hashCode());
