@@ -1,0 +1,196 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Publishes java-time-client to Maven Central through Google's OSS Exit Gate.
+#
+# Triggered by pushing a release tag such as `v1.2.3`. The workflow:
+#   1. Builds the Java SE and Android artifacts (jar, sources, javadoc, POM).
+#   2. Signs them with the project's OpenPGP key and uploads them to the
+#      project's OSS Exit Gate Artifact Registry staging repository.
+#   3. In a separate job, uploads a publishing manifest that tells the Exit Gate
+#      to publish exactly those versions to Maven Central.
+#
+# The OSS Exit Gate authorizes this workflow (via Workload Identity Federation)
+# because it is registered as a builder in
+# google3/configs/security/opensource/exit_gate/prod/projects/java-time-client/mavencentral/project.txtpb:
+#   github_workflow:google/java-time-client/.github/workflows/release.yml@refs/tags/*
+# Do not rename or move this file without updating that config.
+#
+# Required repository secrets:
+#   MAVEN_GPG_PRIVATE_KEY  ASCII-armored OpenPGP private key used to sign artifacts.
+#   MAVEN_GPG_PASSPHRASE   Passphrase for that key.
+#
+# See release/README.md for the full release process.
+
+name: Release to Maven Central
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  EXIT_GATE_PROJECT: java-time-client
+  EXIT_GATE_REGISTRY: mavencentral
+  EXIT_GATE_WIF_PROVIDER: projects/305452601764/locations/global/workloadIdentityPools/builders/providers/github
+  AR_REPOSITORY_URL: https://us-maven.pkg.dev/oss-exit-gate-prod/java-time-client--mavencentral
+  MAVEN_NAMESPACE: com.google.time.client
+  ANDROID_PLATFORM: android-35
+
+jobs:
+  build-and-stage:
+    name: Build, sign and stage artifacts
+    runs-on: ubuntu-latest
+    # Configure required reviewers for this environment in the repository
+    # settings to add a manual approval gate before anything is staged.
+    environment: maven-central
+    permissions:
+      contents: read
+      id-token: write # Required for Workload Identity Federation.
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Check out the release tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Determine the version from the tag
+        id: version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          echo "Releasing version ${version}"
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+
+      - name: Set up JDK
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install the Android platform
+        run: |
+          yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --install "platforms;${ANDROID_PLATFORM}" > /dev/null
+          echo "ANDROID_JAR=${ANDROID_HOME}/platforms/${ANDROID_PLATFORM}/android.jar" >> "${GITHUB_ENV}"
+
+      - name: Build artifacts
+        run: |
+          ./release/build_maven_artifacts.sh \
+            --version "${{ steps.version.outputs.version }}" \
+            --out "${RUNNER_TEMP}/maven-out"
+
+      - name: Import the signing key
+        env:
+          MAVEN_GPG_PRIVATE_KEY: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+        run: |
+          if [[ -z "${MAVEN_GPG_PRIVATE_KEY}" ]]; then
+            echo "::error::The MAVEN_GPG_PRIVATE_KEY secret is not configured."
+            exit 1
+          fi
+          echo "${MAVEN_GPG_PRIVATE_KEY}" | gpg --batch --import
+          key_id="$(gpg --list-secret-keys --with-colons | awk -F: '/^sec/ {print $5; exit}')"
+          echo "GPG_KEY_ID=${key_id}" >> "${GITHUB_ENV}"
+
+      - name: Authenticate to the OSS Exit Gate
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ env.EXIT_GATE_WIF_PROVIDER }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      - name: Sign and upload artifacts to the Exit Gate staging repository
+        env:
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          settings="${RUNNER_TEMP}/settings.xml"
+          cat > "${settings}" <<'EOF'
+          <settings>
+            <servers>
+              <server>
+                <id>oss-exit-gate</id>
+                <username>oauth2accesstoken</username>
+                <password>${env.AR_ACCESS_TOKEN}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
+          AR_ACCESS_TOKEN="$(gcloud auth print-access-token)"
+          export AR_ACCESS_TOKEN
+          echo "::add-mask::${AR_ACCESS_TOKEN}"
+
+          for artifact in java-time-client java-time-client-android; do
+            base="${RUNNER_TEMP}/maven-out/com/google/time/client/${artifact}/${VERSION}/${artifact}-${VERSION}"
+            mvn --batch-mode --no-transfer-progress --settings "${settings}" \
+              org.apache.maven.plugins:maven-gpg-plugin:3.2.8:sign-and-deploy-file \
+              -Durl="${AR_REPOSITORY_URL}" \
+              -DrepositoryId=oss-exit-gate \
+              -Dfile="${base}.jar" \
+              -DpomFile="${base}.pom" \
+              -Dsources="${base}-sources.jar" \
+              -Djavadoc="${base}-javadoc.jar" \
+              -Dgpg.keyname="${GPG_KEY_ID}"
+          done
+
+  trigger-publish:
+    # Kept as a separate job so that the publishing signal is only sent after
+    # all artifacts (and any build attestations) have been uploaded.
+    name: Trigger Maven Central publishing
+    needs: build-and-stage
+    runs-on: ubuntu-latest
+    environment: maven-central
+    permissions:
+      contents: read
+      id-token: write # Required for Workload Identity Federation.
+    steps:
+      - name: Authenticate to the OSS Exit Gate
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ env.EXIT_GATE_WIF_PROVIDER }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      - name: Upload the publishing manifest
+        env:
+          VERSION: ${{ needs.build-and-stage.outputs.version }}
+        run: |
+          manifest="release-${VERSION}.json"
+          cat > "${manifest}" <<EOF
+          {
+            "publish_all": false,
+            "publishing_groups": [
+              {
+                "namespace": "${MAVEN_NAMESPACE}",
+                "packages": [
+                  { "name": "java-time-client", "version": "${VERSION}" },
+                  { "name": "java-time-client-android", "version": "${VERSION}" }
+                ]
+              }
+            ]
+          }
+          EOF
+          cat "${manifest}"
+          gcloud storage cp "${manifest}" \
+            "gs://oss-exit-gate-prod-projects-bucket/${EXIT_GATE_PROJECT}/${EXIT_GATE_REGISTRY}/manifests/${manifest}"
+          echo "Publishing triggered. The Exit Gate emails the team with the result."
