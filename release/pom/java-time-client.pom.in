@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright 2026 Google LLC
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<!--
+  POM template for the Java SE artifact. @VERSION@ is substituted by
+  release/build_maven_artifacts.sh.
+
+  The library intentionally has no runtime dependencies. Annotation-only
+  libraries used at compile time (Error Prone annotations, CLASS retention)
+  are not required at runtime and are therefore not declared.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.google.time.client</groupId>
+  <artifactId>java-time-client</artifactId>
+  <version>@VERSION@</version>
+  <packaging>jar</packaging>
+
+  <name>java-time-client</name>
+  <description>
+    A small, dependency-free SNTP client library for obtaining accurate network time (Java SE).
+  </description>
+  <url>https://github.com/google/java-time-client</url>
+  <inceptionYear>2022</inceptionYear>
+
+  <organization>
+    <name>Google LLC</name>
+    <url>https://www.google.com</url>
+  </organization>
+
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>android-system-time-team</id>
+      <name>Android System Time team</name>
+      <email>android-system-time-team@google.com</email>
+      <organization>Google LLC</organization>
+      <organizationUrl>https://www.google.com</organizationUrl>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:https://github.com/google/java-time-client.git</connection>
+    <developerConnection>scm:git:git@github.com:google/java-time-client.git</developerConnection>
+    <url>https://github.com/google/java-time-client</url>
+    <tag>v@VERSION@</tag>
+  </scm>
+
+  <issueManagement>
+    <system>GitHub Issues</system>
+    <url>https://github.com/google/java-time-client/issues</url>
+  </issueManagement>
+</project>
